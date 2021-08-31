@@ -1,0 +1,160 @@
+---
+title: "Homework 1"
+output: html_notebook
+---
+
+```{r library-imports}
+
+library(tidyverse)
+library(tswge)
+
+```
+
+
+# Exercises
+
+## Applied Problems
+
+### 1.1  
+
+The following data are annual sales of a hypothetical company in millions of dollars.
+
+See 1.9 Estimation, Part I for examples.
+
+```{r}
+# xdf = read.csv(file.choose(), header=TRUE)
+
+# x = as.numeric((paste(xdf$Adj.Close)))
+
+x <- c(76, 70, 66, 60, 70, 72, 76, 80)
+
+x <- x[!is.na(x)]
+
+n <- length(x)  # n = 8
+
+nlag <- n - 1 # n - 1 (7)
+
+
+m <- mean(x)
+
+v <- var(x, na.rm = TRUE)
+
+gamma0 = var(x) * (n-1) / n
+
+aut <- acf(x, lag.max = nlag) # n - 1 (1508)
+
+# sum <- 0
+
+# for (k in 1:nlag) {sum = sum + (1 - k/n) * aut$acf[k+1] * gamma0}
+# vxbar = 2 * sum / n + gamma0 / n # note the multiplication of the sum by 2
+# vxbar
+
+sum_gamma_0 <- 0
+
+for (k in 1:n) {sum_gamma_0 = sum_gamma_0 + (x[k] - m)^2}
+gamma_0_manual <- sum_gamma_0 / n
+
+
+sum_gamma_1 <- 0
+
+for (k in 1:nlag) {sum_gamma_1 = sum_gamma_1 + (x[k] - m) * (x[k+1] - m)}
+gamma_1_manual <- sum_gamma_1 / n
+
+
+
+rho_1 <- gamma_1_manual / gamma_0_manual
+
+
+```
+Sigma^2 Hat = Gamma 0
+
+$$\begin{equation}
+\hat\gamma_0 = 34.9375
+\end{equation}$$
+
+
+Gamma 1
+
+$$\begin{equation}
+\hat\gamma_1 = 14.74219
+\end{equation}$$
+
+Rho Hat 0
+$$\begin{equation}
+\hat\rho_0 = 1
+\end{equation}$$
+
+
+Rho Hat 1
+$$\begin{equation}
+\hat\rho_1 = \hat\gamma_1 \div \hat\gamma_0 = .422
+\end{equation}$$
+
+
+### 1.2
+
+The data shows a non-cyclic wandering behavior with strong correlation between values taht are near each other in time.  The sample auto correlations show strong positive correlation (above 0.5 for k <= 13 ), and the periodogram and Parzen spectral estimator show peaks at zero with no indication of cyclic behavior.
+
+
+
+#### West Texas Intermediate Crude Oil Prices
+
+```{r}
+data(wtcrude)
+plotts.sample.wge(wtcrude)
+```
+#### Pennsylvania average monthly temperatures
+
+The data show a strong cyclic behavior with a period of about 12 which makes sense (because this is monthly data).  The sample auto correlations show a very slowly damping cyclic behavior with cycle length of 12 while the periodogram and Parzen spectral estimator show a strong peak at about f=1/12.
+
+```{r}
+data(patemp)
+plotts.sample.wge(patemp)
+```
+
+### 1.4
+
+Realization 1
+
+Wandering behavior which corresponds to fairly high positive auto-correlations for lags of modest length (d) and has a spectral density with a peak at zero (a).
+
+- Auto correlations (D)
+- Spectral Density (A)
+
+Realization 2
+
+Has very little structure (random line) which corresponds to small or zero auto-correlations (a) and a flat spectral density (d)
+
+- Auto correlations (A)
+- Spectral Density (D)
+
+
+Realization 3
+
+Pseudo-cyclic with a period of about 10 which corresponds to the auto-correlations with damped sinusoidal behavior of about 10 (b) and a peak in the spectral density of about f=0.1 (c)
+
+
+- Auto correlations (B)
+- Spectral Density (C)
+
+Realization 4
+
+Seems to have a pseudo-cyclic behavior with period of a little less than 10 along with a higher frequency component.  This corresponds to the auto-correlations in (c) that show a damped sinusoidal behavior of about 2 along with some high-frequency distortion.  The spectral density in (b) shows a peak at about f=1/12 along with a higher frequency peak.
+
+- Auto correlations (C)
+- Spectral Density (B)
+
+
+
+### 1.6
+
+
+The realizations shows a dominant frequency with period of about 20 along with a higher-frequency behavior.  The auto correlations show the periodic behavior of associated with the period 20 (f=0.05) with some indication of a higher frequency component.  These two plots provide very little evidence regarding the nature of the higher frequency behavior.  The two spectral plots clearly suggest frequency behavior at both f=0.05 and f=0.35.
+
+```{r}
+
+x <- gen.sigplusnoise.wge(n=100, coef=c(3, 1.5), freq=c(.05, .35), psi=c(0,2))
+plotts.sample.wge(x)
+
+```
+
