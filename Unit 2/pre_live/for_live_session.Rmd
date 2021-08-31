@@ -1,6 +1,8 @@
 ---
 title: "Unit 2 - For Live Session"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
 ---
 
 
@@ -86,12 +88,13 @@ parzen.wge(df_dec_2012$count)
 
 1.  For Sin and Cos data, you can easily determine the frequency when in the form of sin(2pi(t) + C)
 
-  sin(2pi(.19))
+    - sin(2pi(.19))
 
-  frequency = .19
-  period = 1 / .19
+    - frequency = .19
+    
+    - period = 1 / .19
 
-2.  "Non-Cyclic" type functions can be expressed as a linear combination of sines and cosines.  (i.e....approximating f(x) which is a line with 500 terms)  With this, the rrequencies can then be evaluated
+2.  "Non-Cyclic" type functions can be expressed as a linear combination of sines and cosines.  (i.e....approximating f(x) which is a line with 500 terms)  With this, the frequencies can then be evaluated
 
 3.  The spectral density for white noise is zero.
 
@@ -102,4 +105,9 @@ parzen.wge(df_dec_2012$count)
 
 
 6.  Lambda k is used to minimize the impact of rho k as k increases
+
+
+# Questions / Comments
+
+1.  I didn't quite understand the Nyquist Frequency section, or why you could just adjust the scale at which you plot.  (decimals vs. integer)
 
