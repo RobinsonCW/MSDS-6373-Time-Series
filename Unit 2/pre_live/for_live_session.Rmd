@@ -1,0 +1,105 @@
+---
+title: "Unit 2 - For Live Session"
+output: html_notebook
+---
+
+
+# Instructions
+
+For this week's Live Session we will have two activities:
+
+Post to (update) the Google Doc:
+
+Generate the spectral density for your realization, and post it to the Google Doc.
+
+Indicate which frequencies, if any, appear to be in your series and/or if there is evidence of wandering behavior.
+
+Comment on how the information from your spectral density is relevant to your series. (For example, if the data is seasonal on an annual basis and recorded on a monthly basis, then you would expect to see a peak in the spectral density at 1/12 = .083.)
+
+Provide a slide or slides for your Key Takeaways for Unit 2!
+
+Provide a slide or slides for any questions or comments you have from this section. This could also include topics you would like to have specifically addressed in live session! There is no minimum or maximum here.
+
+
+
+```{r library-imports}
+library(tidyverse)
+library(lubridate)
+library(tswge)
+```
+
+
+
+```{r load-data}
+df_train <- read.csv(file="./data/train.csv", header = TRUE)
+
+# df_train$datetime = as.POSIXct(df_train$datetime)
+
+df_train$datetime = as.POSIXct(strptime(df_train$datetime, "%Y-%m-%d %H:%M:%S"))
+
+
+df_train <- df_train %>%
+  mutate(year = as.factor(format(datetime, format = "%Y")), 
+         month = as.numeric(format(datetime, format = "%m")), 
+         day = as.factor(format(datetime, format = "%d")),
+         hour = as.factor(format(datetime, format = "%H")))
+
+```
+
+
+```{r filter}
+df_dec_2012 <- df_train %>%
+    filter(datetime >= "2012-12-01")
+  
+```
+
+
+
+
+```{r plot-line-chart}
+ggplot(df_dec_2012, aes(x=datetime, y=count)) +
+  geom_line() + 
+  scale_x_datetime(date_labels = "Day %d", date_breaks = "2 days") + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5)) +
+  xlab("Date") + 
+  ylab("Count") + 
+  ggtitle("Linechart of Bike Counts by Hour")
+```
+
+```{r plot-acf}
+acf(df_dec_2012$count, lag.max = 25, plot = TRUE)
+```
+
+```{r plot-sample}
+
+plotts.sample.wge(df_dec_2012$count)
+
+```
+
+```{r plot-parzen}
+
+parzen.wge(df_dec_2012$count)
+
+```
+
+# Takeaways
+
+1.  For Sin and Cos data, you can easily determine the frequency when in the form of sin(2pi(t) + C)
+
+  sin(2pi(.19))
+
+  frequency = .19
+  period = 1 / .19
+
+2.  "Non-Cyclic" type functions can be expressed as a linear combination of sines and cosines.  (i.e....approximating f(x) which is a line with 500 terms)  With this, the rrequencies can then be evaluated
+
+3.  The spectral density for white noise is zero.
+
+4.  A peak of 0 in the spectral density plot indicates that the data is periodic.  (for example, the Google stock data)
+
+
+5.  For smoothing methods, a common choice for M is 2 √n
+
+
+6.  Lambda k is used to minimize the impact of rho k as k increases
+
