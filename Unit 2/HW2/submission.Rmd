@@ -1,0 +1,98 @@
+---
+title: "Homework 2"
+output: pdf_document
+---
+
+```{r library-imports}
+
+library(tidyverse)
+library(tswge)
+
+```
+
+
+# Exercises
+
+## Applied Problems
+
+### 1.5
+
+The data set `fig.21a` in the R package tswge contains the realization of length n = 250 shown in Figure 1.21a.  Notice that the data and the spectral density (but not the auto-correlations) show evidence of two frequencies, a lower one at about f = 0.05 and a higher frequency of about f = 0.33.  Find the Parzen spectral density estimate for this realization with M = 31.  Plot this spectral density estimate in dB (10 log 10) and again without taking the logarithms.  Comment on the information visible in the spectral density estimates concerning the two dominant frequencies.  What impact has plotting the logarithm (ad dB) had?
+
+
+**Answer:**  `It makes the peak at 0.3 more pronounced.`
+
+
+
+#### Default
+
+dbcalc = TRUE
+
+```{r one-point-five-a}
+
+
+data(fig1.21a)
+parzen.wge(fig1.21a)
+
+
+```
+#### Modified 
+
+dbcalc = FALSE
+
+```{r one-point-five-b}
+
+parzen.wge(fig1.21a, dbcalc = FALSE)
+
+
+```
+
+### 1.6
+
+Generate a realization of length n = 100 from the signal-plus-noise model.
+
+
+**Arguments**
+- n	
+  - length of realization to be generated
+
+- b0	
+  - y intercept of the linear component
+
+- b1	
+  - slope of the linear component
+
+- coef	
+  - a 2-component vector specifying the coefficients (if only one cosine term is desired define coef[2]=0)
+
+- freq	
+  - a 2-component vector specifying the frequency components (0 to .5)
+
+- psi	
+  - a 2-component vector specifying the phase shift (0 to 2pi)
+
+- phi	
+  - a vector of coefficients of the coefficients of the AR noise
+
+- vara	
+  - vara is the variance of the noise. NOTE: a(t) is a vector of N(0,WNV) noise generated within the function (default=1)
+
+- plot	
+  - if TRUE then plot the data generated (default=TRUE)
+
+- sn	
+  - determines the seed used in the simulation (default=0 indicating new realization each time). sn=positve integer, then the same realization is generated each time
+
+
+**Answer:**  `The realization shows a dominant frequency with period of 20 along with a higher-frequency behavior.  The auto-correlations show the periodic behavior associated with the period 20 (f=0.05) with some indication of a higher frequency component.  These two plots provide very little evidence regarding the nature of the higher frequency behavior.  The two spectral plots clearly suggest the frequncy behavior at both f=0.05 and f=0.35.`
+
+
+```{r one-point-six}
+
+x = gen.sigplusnoise.wge(n = 100, coef = c(3, 1.5), freq = c(.05, .35), psi = c(0,2))
+
+plotts.sample.wge(x)
+
+
+```
+
