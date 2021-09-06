@@ -66,10 +66,16 @@ ggplot(df_dec_2012, aes(x=datetime, y=count)) +
   xlab("Date") + 
   ylab("Count") + 
   ggtitle("Linechart of Bike Counts by Hour")
+
 ```
 
 ```{r plot-acf}
-acf(df_dec_2012$count, lag.max = 25, plot = TRUE)
+
+par(mar=c(5,4,1,2) + 0.1)
+
+acf(df_dec_2012$count, lag.max = 50, plot = TRUE)
+title("Hourly Bike Demand Auto-Correlation Plot")
+
 ```
 
 ```{r plot-sample}
