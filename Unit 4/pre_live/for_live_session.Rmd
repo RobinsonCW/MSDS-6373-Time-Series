@@ -1,0 +1,164 @@
+---
+title: "Unit 4 - For Live Session"
+output: html_notebook
+---
+
+
+# Load Libraries
+
+```{r library-imports}
+
+library(tswge)
+library(png)
+
+```
+
+
+```{r activity-1-model}
+pp <- readPNG("C:\\Users\\chanc\\Documents\\projects\\github\\smu\\MSDS-6373-Time-Series\\Unit 4\\pre_live\\img\\activity_1_model.png")
+plot.new() 
+rasterImage(pp,.2,.2,.7,.7)
+```
+
+
+# Activity One
+
+$$\begin{equation}
+  X_{t} + .5X_{t-1}+ .6X_{t-2} = \alpha_{t}
+\end{equation}$$
+
+on a slide in your PowerPoint file, have worked out the characteristic equation of the above model.
+
+In addition, find the roots of this characteristic equation and make a judgment of the stationarity of the model.  Note: This should be done by hand or typed out.  factor.wge() should not be used here.
+
+Next, find the true system frequency of this model using the formula below. Note: the argument to the inverse cosine is in radians.
+
+```{r activity-one-frequency}
+
+phi1 = -.5
+phi2 = -.6
+
+f_0 = (1 / (2 * pi)) * acos((phi1 / (2 * sqrt(-1 * (phi2)))))
+f_0
+```
+
+
+```{r activity-one-a}
+
+# Xt + .5X_t-1 + .6X_t-2  One Positive and One Negative
+
+factor.wge(phi = c(-.5, -.6))
+plotts.true.wge(phi = c(-.5, -.6))
+
+```
+
+
+```{r activity-one-a}
+
+# Xt + .5X_t-1 + .6X_t-2  One Positive and One Negative
+
+factor.wge(phi = c(.2, .4))
+plotts.true.wge(phi = c(.2, .4))
+
+```
+
+
+```{r activity-1-frequency-formula}
+pp <- readPNG("C:\\Users\\chanc\\Documents\\projects\\github\\smu\\MSDS-6373-Time-Series\\Unit 4\\pre_live\\img\\activity_1_frequency_formula.png")
+plot.new() 
+rasterImage(pp,0,0,1,1)
+```
+
+# Activity Two
+
+
+For Live Session Consider the Walmart Data given here. This is data for Store 9 and Item 50. Create 1 to 2 slides in a Powerpoint presentation to indicate which model you feel is the most appropriate in modeling this time series and why. Your audience is your boss who you may assume has significant experience and knowledge in time series methods. You should not only indicate why you chose the model you did choose but why you didn’t choose the others (or why the one you chose is better.) You may use any of the methods we have covered through Unit 4.
+
+Here are the four competing models (image is also attached below in case it is hard to read here):
+
+
+```{r activity-2-four-models}
+pp <- readPNG("C:\\Users\\chanc\\Documents\\projects\\github\\smu\\MSDS-6373-Time-Series\\Unit 4\\pre_live\\img\\activity_2_four_models.png")
+plot.new() 
+rasterImage(pp, 0, 0, 1, 1)
+```
+
+For ease, the coefficients for the above models can be copied and pasted from below:
+
+- Model 1: .967
+
+- Model 2: c(1.452,-.453,-.294,.175,.237,-.154)
+
+- Model 3: c(1.445,-.411,-.038,.170,.362,-.245,-.177,.213)
+
+- Model 4: c(0.1516, 0.0769, 0.0016, -0.0095, 0.0542, 0.1117, 0.5683)
+
+# One Postive and One Negative
+
+```{r one-positive-one-negative}
+
+# Xt - .2X_t-1 + .48X_t-2  One Positive and One Negative
+x = gen.arma.wge(200, phi = c(.2, .48))
+plotts.sample.wge(x)
+
+```
+
+
+```{r two-positive}
+
+# Xt - 1.4X_t-1 + .48X_t-2  Two Positive 
+x = gen.arma.wge(200, phi = c(1.4, -.48))
+plotts.sample.wge(x)
+
+```
+
+
+
+
+```{r two-negative}
+
+# Xt + 1.4X_t-1 + .48X_t-2  Two Negative 
+x = gen.arma.wge(200, phi = c(-1.4, -.48))
+plotts.sample.wge(x)
+
+```
+
+
+```{r test}
+
+# Xt + 1.4X_t-1 + .48X_t-2  Two Negative 
+x = gen.arma.wge(200, phi = c(.2, .4))
+plotts.sample.wge(x)
+
+```
+
+
+
+```{r}
+
+# X_t - 1.95X_t-1 + 1.85X_t-2 - .855X_t-3 = a_t
+
+# Factor Table
+factor.wge(phi = c(1.95, -1,85, .855))
+
+plotts.true.wge(phi = c(1.95, -1.85, .855))
+
+
+
+```
+
+
+
+```{r}
+
+# X_t - 1.95X_t-1 + 1.85X_t-2 - .855X_t-3 = a_t
+
+# Factor Table
+factor.wge(phi = c(1.59, -.544, -.511, .222))
+
+plotts.true.wge(phi = c(1.59, -.544, -.511, .222))
+
+
+
+```
+
