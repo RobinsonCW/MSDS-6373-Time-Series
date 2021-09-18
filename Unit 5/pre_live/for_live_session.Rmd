@@ -1,0 +1,169 @@
+---
+title: "Unit 5 - Moving Average (MA(q)) and ARMA(p,q) Models"
+output:
+  html_document:
+    df_print: paged
+---
+
+
+# For Live Session
+
+In preparation for the next live session, please complete the following. Be sure and submit your work to the "Unit 5: "For Live Session" Assignment" assignment on 2DS:
+
+- Use Aic5 to assess the use of ARMA models for your time series.  Add your findings to the Google doc. 
+
+For the breakout PowerPoint slides:
+
+- Slide 1: Use Aic5 to assess the use of ARMA models in the Walmart data.
+
+- Slide 2: Find ρ1 for the following model by hand.  Xt = at–.8at-1 + .5at–2.
+
+- Slide 3: Represent the model as a GLP.
+
+- Slide 4: Generate a realizations from an ARMA model. You pick p and q.  Include the ACF and spectral density. 
+
+- Slide 5: Use AIC 5 to identify the top five quality models with respect to AIC for the cancelled flight data from the SWADelay.csv data set (column: arr_cancelled). Comment on which are AR, MA, and ARMA.
+
+- Slide 6+: Provide a slide or slides for your Key Takeaways for Unit 5!
+
+- Last slide: Provide a slide or slides for any questions or comments you have from this section. This could also include topics you would like to have specifically addressed in live session! There is no minimum or maximum here.
+
+
+
+```{r library-imports}
+
+library(tidyverse)
+library(tswge)
+
+
+```
+
+# Asynchronous Material
+
+## 5.2 MA(q): Properties and Characteristics, Part I
+
+
+### 5.2.5 MA(1) Model
+
+
+$$\begin{equation}
+   X_{t} = a_{t} -.5X_{t-1}
+\end{equation}$$
+
+```{r 5.2.5}
+
+# X_t = a_t -.5a_t-1
+
+
+theta1 = .5
+
+p0 = 1
+p1 = NA
+p2 = 0
+p3 = 0
+
+
+p1 = -(theta1) / (1 + theta1^2)
+p1
+
+
+```
+
+#### Equation for rho 1
+
+$$\begin{equation}
+   \rho_1 = \frac{-\theta_1}{1 + \theta_1^2}
+\end{equation}$$
+
+
+### 5.2.7 MA(2) Model
+
+
+$$\begin{equation}
+   X_{t} = a_{t} -.5X_{t-1} + .9X_{t-2}
+\end{equation}$$
+
+```{r 5.2.7}
+
+# X_t = a_t -.5a_t-1 + .9a_t-2
+
+
+theta1 = .5
+theta2 = -.9
+
+p0 = 1
+p1 = NA
+p2 = NA
+p3 = 0
+
+
+p1 = (-(theta1) + (theta1 * theta2)) / (1 + (theta1^2 + theta2^2))
+p1
+
+
+p2 = -(theta2) / (1 + (theta1^2 + theta2^2))
+p2
+
+
+```
+#### Equation for rho 1
+
+$$\begin{equation}
+   \rho_1 = \frac{-\theta_1 + \theta_1\theta_2}{1 + \theta_1^2 + \theta_2^2}
+\end{equation}$$
+
+
+#### Equation for rho 2
+
+$$\begin{equation}
+   \rho_2 = \frac{-\theta_2}{1 + \theta_1^2 + \theta_2^2}
+\end{equation}$$
+
+
+## 5.3 MA(q): Properties and Characteristics, Part II
+
+### 5.3.1 tswge
+
+
+```{r 5.3.1.1}
+
+# Generating MA(1) data
+
+# gen.arma.wge(n=100, theta=.99)
+# gen.arma.wge(n=100, theta=-.99)
+# gen.arma.wge(n=100, theta=.99, sn=5)
+# gen.arma.wge(n=100, theta=-.99, sn=5)
+plotts.true.wge(theta=c(.99))
+
+
+```
+
+
+```{r 5.3.1.2}
+
+# Generating MA(2) data from Example 2
+
+# gen.arma.wge(n=100, theta=c(.9,-.4))
+plotts.true.wge(theta=c(.9,-.4))
+
+
+```
+
+### 5.3.4 tswge
+
+
+```{r 5.3.4.1}
+
+# AR(2) X_t -1.1X_t-1 + .9X_t-2 = a_t
+
+plotts.true.wge(phi=c(1.1,-.9))
+
+```
+
+```{r 5.3.4.2}
+
+# MA(2) X_t = a_t -1.1a_t-1 + .9a_t-2 
+
+plotts.true.wge(theta=c(1.1,-.9))
+
+```
