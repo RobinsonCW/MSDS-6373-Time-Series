@@ -8,6 +8,7 @@ output: html_notebook
 
 ```{r library-imports}
 
+library(tidyverse)
 library(tswge)
 library(png)
 
@@ -53,14 +54,6 @@ plotts.true.wge(phi = c(-.5, -.6))
 ```
 
 
-```{r activity-one-a}
-
-# Xt + .5X_t-1 + .6X_t-2  One Positive and One Negative
-
-factor.wge(phi = c(.2, .4))
-plotts.true.wge(phi = c(.2, .4))
-
-```
 
 
 ```{r activity-1-frequency-formula}
@@ -92,6 +85,85 @@ For ease, the coefficients for the above models can be copied and pasted from be
 - Model 3: c(1.445,-.411,-.038,.170,.362,-.245,-.177,.213)
 
 - Model 4: c(0.1516, 0.0769, 0.0016, -0.0095, 0.0542, 0.1117, 0.5683)
+
+
+
+```{r activity-2-walmart-a}
+#Walmart Analysis 
+Walmart = read.csv(file.choose(),header = TRUE)
+
+Store9Item50 = Walmart %>% filter(store == "9", item == "50")
+
+plotts.wge(Store9Item50$sales)
+# parzen.wge(na.omit(Store9Item50$sales))
+# parzen.wge(na.omit(Store8Item50$sales), trunc = 500)
+```
+
+```{r}
+
+parzen.wge(na.omit(Store9Item50$sales))
+
+```
+
+
+```{r}
+
+plotts.sample.wge(na.omit(Store9Item50$sales))
+
+```
+
+
+```{r activity-2-walmart-model-1}
+
+plotts.true.wge(phi = c(.967))
+
+```
+```{r activity-2-walmart-model-2}
+
+plotts.true.wge(phi = c(1.452,-.453,-.294,.175,.237,-.154))
+
+```
+
+
+```{r activity-2-walmart-model-3}
+
+plotts.true.wge(phi = c(1.445,-.411,-.038,.170,.362,-.245,-.177,.213) )
+
+```
+
+```{r activity-2-walmart-model-4-a}
+
+plotts.true.wge(phi = c(0.1516, 0.0769, 0.0016, -0.0095, 0.0542, 0.1117, 0.5683) )
+
+```
+
+```{r activity-2-walmart-model-4-b}
+
+# plotts.true.wge(phi = c(0.1516, 0.0769, 0.0016, -0.0095, 0.0542, 0.1117, 0.5683) )
+
+x = gen.arma.wge(1826, phi = c(0.1516, 0.0769, 0.0016, -0.0095, 0.0542, 0.1117, 0.5683))
+plotts.sample.wge(x)
+
+```
+
+```{r activity-2-walmart-model-4-c}
+
+# plotts.true.wge(phi = c(0.1516, 0.0769, 0.0016, -0.0095, 0.0542, 0.1117, 0.5683) )
+
+x = gen.arma.wge(1826, phi = c(0.1516, 0.0769, 0.0016, -0.0095, 0.0542, 0.1117, 0.5683))
+plotts.true.wge(x)
+
+```
+
+
+
+```{r activity-2-walmart-model-4-d}
+
+factor.wge(phi = c(0.1516, 0.0769, 0.0016, -0.0095, 0.0542, 0.1117, 0.5683))
+
+```
+
+
 
 # One Postive and One Negative
 
