@@ -167,3 +167,31 @@ plotts.true.wge(phi=c(1.1,-.9))
 plotts.true.wge(theta=c(1.1,-.9))
 
 ```
+
+
+### 5.4.3 MA(q) Invertablity
+
+```{r 5.4.3.1}
+
+
+# MA(2) X_t = a_t -1.6a_t-1 + .9a_t-2 
+
+factor.wge(phi=c(1.6,-.9))
+
+### Abs Recip < 1 (and therefore outside of the unit circle which is invertable)
+
+```
+
+```{r 5.4.3.2}
+
+
+# MA(2) X_t = a_t + 1.6a_t-1 - .9a_t-2 
+
+# factor.wge(phi=c(1.6,.9))
+
+factor.wge(phi=c(-.1,.3))
+
+### Abs Recip > 1  (at least one root is inside of the unit circle and therefore not invertable)
+
+```
+
