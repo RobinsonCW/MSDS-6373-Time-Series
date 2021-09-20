@@ -38,6 +38,63 @@ library(tswge)
 
 ```
 
+# For Live Session
+
+## Walmart Data
+
+```{r for-live-session-slide-1}
+
+#Walmart Analysis 
+Walmart = read.csv(file.choose(),header = TRUE)
+
+Store9Item50 = Walmart %>% filter(store == "9", item == "50")
+
+plotts.wge(Store9Item50$sales)
+plotts.sample.wge(Store9Item50$sales)
+
+aic5.wge(Store9Item50$sales)
+
+# parzen.wge(na.omit(Store9Item50$sales))
+# parzen.wge(na.omit(Store8Item50$sales), trunc = 500)
+
+
+# plotts.wge(SWA$weather_delay)
+# plotts.sample.wge(SWA$weather_delay)
+
+# aic5.wge(SWA$weather_delay)
+
+```
+
+
+## Rho 1 Calculation
+
+### General Equation for rho 1
+
+$$\begin{equation}
+   \rho_1 = \frac{-\theta_1 + \theta_1\theta_2}{1 + \theta_1^2 + \theta_2^2}
+\end{equation}$$
+
+### Actual Equation
+
+$$\begin{equation}
+   X_{t} = a_{t} - .8X_{t-1} + .5X_{t-2}
+\end{equation}$$
+
+```{r for-live-session-slide-2}
+# X_t = a_t -.8a_t-1 + .5a_t-2
+
+theta1 = .8
+theta2 = -.5
+
+p0 = 1
+p1 = NA
+
+p1 = (-(theta1) + (theta1 * theta2)) / (1 + (theta1^2 + theta2^2))
+p1
+
+```
+
+
 # Asynchronous Material
 
 ## 5.2 MA(q): Properties and Characteristics, Part I
@@ -171,6 +228,10 @@ plotts.true.wge(theta=c(1.1,-.9))
 
 ### 5.4.3 MA(q) Invertablity
 
+$$\begin{equation}
+   X_{t} = a_{t} - 1.6X_{t-1} + .9X_{t-2}
+\end{equation}$$
+
 ```{r 5.4.3.1}
 
 
@@ -181,6 +242,10 @@ factor.wge(phi=c(1.6,-.9))
 ### Abs Recip < 1 (and therefore outside of the unit circle which is invertable)
 
 ```
+$$\begin{equation}
+   X_{t} = a_{t} + 1.6X_{t-1} - .9X_{t-2}
+\end{equation}$$
+
 
 ```{r 5.4.3.2}
 
@@ -192,6 +257,116 @@ factor.wge(phi=c(1.6,-.9))
 factor.wge(phi=c(-.1,.3))
 
 ### Abs Recip > 1  (at least one root is inside of the unit circle and therefore not invertable)
+
+```
+
+## 5.5 ARMA(p,q), Properties and Characteristics
+
+
+### ARMA(p,q) | Cancellation
+
+These two models are the same due to the factors cancelling each other out.
+
+```{r 5.5.4}
+
+plotts.true.wge(250, phi = c(1.3,-.4), theta=c(.8))
+
+# plotts.true.wge(250, phi = c(.5)
+
+
+# 5.5.5
+# plotts.true.wge(250, phi = c(-.1,-.82, .16), theta=c(-.2))
+# 
+# plotts.true.wge(250, phi = c(.1, -.8))
+
+# 5.5.6
+# plotts.true.wge(250, phi = c(1.95,-1.9), theta=c(1.95, -1.9))
+# 
+# plotts.true.wge(250, phi = c(1.95))
+
+```
+
+
+```{r 5.5.8}
+
+# AR Factors
+
+# plotts.true.wge(phi = c(.3, .9, .1, -.8075))
+# factor.wge(c(.3, .9, .1, -.8075))
+
+
+# MA Factors
+
+# plotts.true.wge(theta = c(-.9, -.8, -.72))
+# factor.wge(c(-.9, -.8, -.72))
+
+
+# ARMA
+
+plotts.true.wge(phi = c(.3, .9, .1, -.8075), theta = c(-.9, -.8, -.72))
+# factor.wge(c(.3, .9, .1, -.8075))
+
+
+# 5.5.10
+# plotts.true.wge(phi = c(.1, -.5, .7), theta = c(.72, -.8))
+
+```
+
+
+## 5.6 ARMA(p,q), Examples
+
+
+Akaike's Information Criterion (AIC)
+
+Given a set of data, the AIC is used to evaluate and compare the quality of models.
+
+The model with the lowest AIC is preferred.
+
+
+### 5.6.4
+
+
+```{r 5.6.4}
+
+# aic.wge(jetA$Price, p = 1, q = 0 )$value
+
+# plotts.ege(jetA$Price)
+
+# aic5.wge(jetA$price)
+
+
+# SWA Delay Analysis
+
+SWA = read.csv(file.choose(), header = TRUE)
+plotts.wge(SWA$weather_delay)
+plotts.sample.wge(SWA$weather_delay)
+
+aic5.wge(SWA$weather_delay)
+
+```
+
+
+
+
+## 5.7 ARMA(p,q), Psi Weights
+
+### Example
+
+
+
+```{r 5.7.2}
+
+# psi-weights for simple MA(1) model X(t)=(1 - .8B)a(t)
+psi.weights.wge(theta = .8, lag.max = 5)
+
+# psi-weights for simple AR(1) model  X(t)=(1 - .8B)a(t)
+psi.weights.wge(phi = .8, lag.max = 5)  # note that psi(j) = .8j
+
+# psi-weights for ARMA(2,1) model (1 - 1.2B + .6B2)X(t) = (1 - .5B)a(t)
+psi.weights.wge(phi=c(1.2, -.6), theta=c(.5), lag.max=5)
+
+# 5.7.3
+psi.weights.wge(phi = c(1.95, -1.9), lag.max = 5)
 
 ```
 
