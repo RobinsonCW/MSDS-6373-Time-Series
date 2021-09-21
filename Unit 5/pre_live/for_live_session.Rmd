@@ -40,12 +40,49 @@ library(tswge)
 
 # For Live Session
 
+## Bikeshare Demand
+
+```{r for-live-session-google-doc-1}
+
+df_train <- read.csv(file="../../Unit 2/pre_live/data/train.csv", header = TRUE)
+
+# df_train$datetime = as.POSIXct(df_train$datetime)
+
+df_train$datetime = as.POSIXct(strptime(df_train$datetime, "%Y-%m-%d %H:%M:%S"))
+
+
+df_train <- df_train %>%
+  mutate(year = as.factor(format(datetime, format = "%Y")), 
+         month = as.numeric(format(datetime, format = "%m")), 
+         day = as.factor(format(datetime, format = "%d")),
+         hour = as.factor(format(datetime, format = "%H")))
+
+```
+
+
+```{r for-live-session-google-doc-2}
+
+df_dec_2012 <- df_train %>%
+    filter(datetime >= "2012-12-01")
+  
+```
+
+```{r for-live-session-google-doc-3}
+
+aic5.wge(df_dec_2012$count)
+
+```
+
+
+
 ## Walmart Data
 
 ```{r for-live-session-slide-1}
 
 #Walmart Analysis 
-Walmart = read.csv(file.choose(),header = TRUE)
+# Walmart = read.csv(file.choose(),header = TRUE)
+Walmart = read.csv(file="../../Unit 3/Walmart.csv", header = TRUE)
+
 
 Store9Item50 = Walmart %>% filter(store == "9", item == "50")
 
@@ -91,6 +128,41 @@ p1 = NA
 
 p1 = (-(theta1) + (theta1 * theta2)) / (1 + (theta1^2 + theta2^2))
 p1
+
+```
+
+
+
+```{r for-live-session-slide-4}
+
+# ARMA
+plotts.true.wge(phi = c(.3, .9, .1, -.8075), theta = c(-.9, -.8, -.72))
+# factor.wge(c(.3, .9, .1, -.8075))
+
+```
+
+
+## SWA Cacelled Flights
+
+Use AIC 5 to identify the top five quality models with respect to AIC for the cancelled flight data from the SWADelay.csv data set (column: arr_cancelled). Comment on which are AR, MA, and ARMA.
+
+```{r for-live-session-slide-5}
+
+# aic.wge(jetA$Price, p = 1, q = 0 )$value
+
+# plotts.ege(jetA$Price)
+
+# aic5.wge(jetA$price)
+
+# SWA Delay Analysis
+
+# SWA = read.csv(file.choose(), header = TRUE)
+SWA = read.csv(file="../SWADelay.csv", header = TRUE)
+
+plotts.wge(SWA$arr_cancelled)
+plotts.sample.wge(SWA$arr_cancelled)
+ 
+aic5.wge(SWA$arr_cancelled)
 
 ```
 
@@ -337,7 +409,9 @@ The model with the lowest AIC is preferred.
 
 # SWA Delay Analysis
 
-SWA = read.csv(file.choose(), header = TRUE)
+# SWA = read.csv(file.choose(), header = TRUE)
+SWA = read.csv(file="../SWADelay.csv", header = TRUE)
+
 plotts.wge(SWA$weather_delay)
 plotts.sample.wge(SWA$weather_delay)
 
