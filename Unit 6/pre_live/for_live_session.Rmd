@@ -1,56 +1,11 @@
 ---
 title: "Unit 6 - ARIMA Models and Seasonality"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
 ---
 
 # For Live Session
-
-1. Looking at your time series from the first day of class, you addressed its stationarity before. Does either a signal plus noise, ARIMA, or ARUMA (seasonal) model seem appropriate?  (Just comment on your PowerPoint slide. We will test the fits of these models later.)
-
-2. Copy and paste the factor table for a seasonal model with s = 7. 
-
-3. Consider the following models:
-
-Model 1
-
-$$\begin{equation}
-   (1 - B^4)X_{t} = (1 - .6B + .8B^2)a_{t}
-\end{equation}$$
-
-
-Model 2
-
-$$\begin{equation}
-   (1 + .3B)X_{t} = (1 - .6B + .8B^2)a_{t}
-\end{equation}$$
-
-Model 3
-
-
-$$\begin{equation}
-   (1 - .1B - .99B^2 + .013B^3 + .2078B^4 + .0888B^5 + .00864B^6)(1 - B)^2(1 - B^{12})X_{t} = (1 - .6B + .8B^2)a_{t}
-\end{equation}$$
-
-
-
-Comment and provide evidence (for each of the models) if they look to be:
-
-ARUMA with d ≠0 and s≠0
-ARUMA with d = 0 and s≠0 (Identify p and q as well.)
-ARIMA (Identify d as well as p and q.)
-ARMA (Identify p and q.)
-
-
-
-4. Pick a stock and download the last year's worth of daily stock price data.  
-
-- Plot the data. 
-- Take the first difference, and then estimate the structure of differenced data.  
-- From this information, suggest a model for the data. 
-
-5. Provide a slide or slides for your Key Takeaways for Unit 6!
-
-6. Provide a slide or slides for any questions or comments you have from this section. This could also include topics you would like to have specifically addressed in live session! There is no minimum or maximum here.
 
 
 ```{r library-imports}
@@ -62,6 +17,8 @@ library(tswge)
 
 
 ## Bikeshare Demand
+
+1. Looking at your time series from the first day of class, you addressed its stationarity before. Does either a signal plus noise, ARIMA, or ARUMA (seasonal) model seem appropriate?  (Just comment on your PowerPoint slide. We will test the fits of these models later.)
 
 ```{r for-live-session-google-doc-1}
 
@@ -90,13 +47,124 @@ df_dec_2012 <- df_train %>%
 
 ```{r for-live-session-google-doc-3}
 
-aic5.wge(df_dec_2012$count)
+plotts.sample.wge(df_dec_2012$count)
+
+parzen.wge(df_dec_2012$count)
+
+bike_diff = artrans.wge(df_dec_2012$count, c(rep(0,23), 1))  # Take out the (1-B^12)
+
+aic5.wge(bike_diff) # Check the structure of the noise
+
+parzen.wge(bike_diff)
+
+```
+
+## Factor Table
+
+2. Copy and paste the factor table for a seasonal model with s = 7.
+
+
+```{r}
+
+factor.wge(c(rep(0,6), 1))
+
+```
+
+## Model Comparisons
+
+3. Consider the following models:
+
+Comment and provide evidence (for each of the models) if they look to be:
+
+   a. ARUMA with d ≠0 and s≠0
+   b. ARUMA with d = 0 and s≠0 (Identify p and q as well.)
+   c. ARIMA (Identify d as well as p and q.)
+   d. ARMA (Identify p and q.)
+
+
+   Model 1
+
+$$\begin{equation}
+   (1 - B^4)X_{t} = (1 - .6B + .8B^2)a_{t}
+\end{equation}$$
+
+
+a. No, the B^4 would be for a seasonal model
+b. Yes, this is a quarterly model, with p of 0 and a q of 3.  ARUMA (0,4,3)
+c. No, B^4 would be for a seasonal model
+d. No, B^4 would be for a seasonal model
+
+
+   Model 2
+
+$$\begin{equation}
+   (1 + .3B)X_{t} = (1 - .6B + .8B^2)a_{t}
+\end{equation}$$
+
+a. No, there is no seasonal component to this model
+b. No, there is no differenced nor seasonal component to this model.
+c. No, there is no differenced component to this model.
+d. Yes, the p is 1 and the q is 2.  ARMA(1,2)
+
+
+   Model 3
+
+
+$$\begin{equation}
+   (1 - .1B - .99B^2 + .013B^3 + .2078B^4 + .0888B^5 + .00864B^6)(1 - B)^2(1 - B^{12})X_{t} = (1 - .6B + .8B^2)a_{t}
+\end{equation}$$
+
+
+a. Yes, p is 6 and q is 2.  "Airline Model"
+b. No, the (1-B)^2 is for a differenced model and there are p, q and seasonal components present as well.
+c. No, B^12 would be for a seasonal model and the (1-B)^2 is for a differenced model.
+d. No, B^12 would be for a seasonal model and (1-B)^2 is for a differenced model
+
+
+## OKTA Closing Stock Price 
+
+   9/28/20 - 9/27/21
+
+
+4. Pick a stock and download the last year's worth of daily stock price data.  
+
+- Plot the data. 
+- Take the first difference, and then estimate the structure of differenced data.  
+- From this information, suggest a model for the data. 
+
+
+```{r for-live-session-slide-4-1}
+
+df_okta <- read.csv(file="./data/OKTA.csv", header = TRUE)
 
 ```
 
 
+```{r for-live-session-slide-4-2}
+df_okta %>%
+  mutate(Date = as.Date(Date)) %>%
+  complete(Date = seq.Date(min(Date), max(Date), by="day")) %>%
+  fill(Close)
+```
+```{r for-live-session-slide-4-3}
+
+plotts.sample.wge(df_okta$Close)
+
+parzen.wge(df_okta$Close)
+
+okta_diff = artrans.wge(df_okta$Close, 1)  # Take out the (1-B^12)
+
+aic5.wge(okta_diff) # Check the structure of the noise
 
 
+```
+
+## Takeaways and Questions
+
+5. Provide a slide or slides for your Key Takeaways for Unit 6!
+
+
+6. Provide a slide or slides for any questions or comments you have from this section. This could also include topics you would like to have specifically addressed in live session! There is no minimum or maximum here.
 
 
 # Asynchronous Material
