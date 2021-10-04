@@ -1,0 +1,707 @@
+---
+title: "Unit 7 - Forecasting"
+output:
+  html_document:
+    df_print: paged
+---
+
+# For Live Session
+
+```{r library-imports}
+
+library(tidyverse)
+library(tswge)
+
+```
+
+
+## Question 1 
+
+1. Which model do you think is appropriate to use to forecast your time series? Why? Add this to the Google Doc as well as to your PowerPoint deck. 
+
+
+```{r for-live-session-google-doc-1}
+
+df_train <- read.csv(file="../../Unit 2/pre_live/data/train.csv", header = TRUE)
+
+# df_train$datetime = as.POSIXct(df_train$datetime)
+
+df_train$datetime = as.POSIXct(strptime(df_train$datetime, "%Y-%m-%d %H:%M:%S"))
+
+
+df_train <- df_train %>%
+  mutate(year = as.factor(format(datetime, format = "%Y")), 
+         month = as.numeric(format(datetime, format = "%m")), 
+         day = as.factor(format(datetime, format = "%d")),
+         hour = as.factor(format(datetime, format = "%H")))
+
+```
+
+
+```{r for-live-session-google-doc-2}
+
+df_dec_2012 <- df_train %>%
+    filter(datetime >= "2012-12-01")
+  
+```
+
+```{r for-live-session-google-doc-3}
+
+plotts.sample.wge(df_dec_2012$count)
+
+parzen.wge(df_dec_2012$count)
+
+bike_diff = artrans.wge(df_dec_2012$count, c(rep(0,23), 1))  # Take out the (1-B^24)
+
+aic5.wge(bike_diff) # Check the structure of the noise
+
+parzen.wge(bike_diff)
+
+```
+
+
+## Question 2
+
+2. Find the first 5 psi weights for the model below, and use them to find the half-width of the 95 percentile probability interval for the third forecast (Xhat(3)). Please show your work as well as a plot of the series and the first eight forecasts with probability intervals.
+
+Hint: equations to help find sigma_hat_A and the formula for the confidence prediction interval can be found on pages 245 and 246
+
+
+$$\begin{equation}
+   (1 - .9B)(1 - .8B)X_{t} = a_{t}
+\end{equation}$$
+
+First 8 Observations:
+
+X_1 = 5 
+X_2 = 8
+X_3 = 9
+X_4 = 8
+X_5 = 7
+X_6 = 6
+X_7 = 4
+X_8 = 3
+
+
+## Question 3
+
+
+3.  Using the three models below and the Amtrak ridership data, which model has the smallest ASE in forecasting the next year (12 months)?  Show your code in forecasting the 12 observations as well as in calculating the ASE.
+
+
+**Model 1**
+
+(1"+ 0.5511" 𝐵"− 0.1680" 𝐵^2 "+0.0145" 𝐵^3 "− 0.0651" 𝐵^4 "− 0.1388" 𝐵^5 "+ 0.2966" 𝐵^6 "− 0.1539" 𝐵^7 "− 0.1270" 𝐵^8
+"+0.1815" 𝐵^9 "− 0.0364" 𝐵^10 "− 0.1456" 𝐵^11 "− 0.6287" 𝐵^12 "+ 0.3832" 𝐵^13 "+ 0.0199" 𝐵^14 "+ 0.1679" 𝐵^15)𝑋_𝑡=𝑎_𝑡
+
+phis:  c(0.5511, 0.1680, -0.0145, 0.0651, 0.1388, -0.2966, 0.1539, 0.1270, -0.1815, 0.0364, 0.1456, 0.6287, -0.3832, -0.0199, -0.1679) 
+
+
+**Model 2**
+
+(1"+ 0.027" 1𝐵"−0.7421" 𝐵^2)(1−𝐵^12)𝑋_𝑡=〖(1"+ 0" .5845𝐵"− " 0.3837𝐵^2)𝑎〗_𝑡
+
+phis: c(-0.02709541,  0.74213105)
+thetas: c(-0.5844596,  0.3836931)
+
+
+
+**Model 3**
+
+(1 − .3069𝐵)(1−𝐵)(1−𝐵^12)𝑋_𝑡=〖(1"− " 0.7432𝐵)𝑎〗_𝑡
+
+phi: 0.306943
+theta: 0.7431719
+
+
+
+# Asynchronous Material
+
+## 7.4 Forecasting with AR(p) Models
+
+### AR(1) 
+
+forecasts tend to approach the sample mean
+
+```{r 7.4.2}
+
+# (1 - 8B)(X_t - 25) = a_t
+
+X_80 = 21.77
+X_bar = 24.17
+
+X_80_1 = 22.25
+X_80_2 = 22.63
+X_80_3 = 22.93
+
+# X_t = **(1 - .8)mu** + .8X_t-1 + a_t
+
+const = (1 - .8) * (X_bar)
+round(const, 2)
+
+
+X_80_4 = round(const + .8 * (X_80_3), 2)
+X_80_4
+
+X_80_5 = round(const + .8 * (X_80_4), 2)
+X_80_5
+
+X_80_6 = round(const + .8 * (X_80_5), 2)
+X_80_6
+
+
+```
+
+### AR(2) 
+
+forecasts tend to gradually in a sinusoidal pattern come back to the mean
+
+$$\begin{equation}
+   \hat {X_t}_0 (l) = \phi_1 \hat {X_t}_0 (l-1) + \phi_2 \hat {X_t}_0 (l-2) + \hat X(1 - \phi_1 - \phi_2)
+\end{equation}$$
+
+
+
+```{r 7.4.4}
+
+# (1 - 1.6B + .8B^2)(X_t - 50) = a_t
+
+X_75 = 23.4
+X_74 = 27.7
+X_bar = 29.4
+
+# X_75_1 = 21.2
+# X_75_2 = 21.1
+# X_75_3 = 22.7
+
+# X_bar(1 - phi1 - phi2)
+
+phi1 = 1.6
+phi2 = -.8
+
+const = (X_bar) * (1 - phi1 - phi2)
+round(const, 2)
+
+
+X_75_1 = round( (1.6 * X_75) + (-.8 * X_74) + const, 2)
+X_75_1 = 21.2
+
+X_75_2 = round( (1.6 * X_75_1) + (-.8 * X_75) + const, 2)
+X_75_2 = 21.1
+
+X_75_3 = round( (1.6 * X_75_2) + (-.8 * X_75_1) + const, 2)
+X_75_3 = 22.7
+
+X_75_4 = round( (1.6 * X_75_3) + (-.8 * X_75_2) + const, 1)
+X_75_4
+
+X_75_5 = round( (1.6 * X_75_4) + (-.8 * X_75_3) + const, 1)
+X_75_5
+
+X_75_6 = round( (1.6 * X_75_5) + (-.8 * X_75_4) + const, 1)
+X_75_6
+
+
+
+```
+
+### TSWGE
+
+#### AR(1) Phi Positive
+
+```{r 7.4.8.1, echo=FALSE, message=FALSE, results='hide'}
+
+# AR(1) Phi Positive
+data(fig6.1nf)
+plotts.wge(fig6.1nf)
+
+fore.arma.wge(fig6.1nf, phi = .8, n.ahead = 20, plot = TRUE, limits = FALSE)
+
+```
+#### AR(1) Phi Negative
+
+```{r 7.4.8.2, echo=FALSE, message=FALSE, results='hide'}
+
+# AR(1) Phi Negative
+
+x1 = gen.arma.wge(100, phi = -.8)
+
+fore.arma.wge(x1, phi = -.8, n.ahead = 20, plot = TRUE, limits = FALSE)
+
+```
+
+
+#### AR(2)
+
+```{r 7.4.8.3, echo=FALSE, message=FALSE, results='hide'}
+
+# AR(2)
+
+x2 = gen.arma.wge(n=75, phi = c(1.6, -.8), sn=24)
+x2 = x2 + 25
+# plotts.wge(x2)
+
+fore.arma.wge(x2, phi = c(1.6, -.8), n.ahead = 20, plot = TRUE, limits = FALSE)
+
+```
+
+
+
+### Eventual Forecast Function
+
+Key Observations
+
+
+1.  In both cases, the forecasts behave like the auto correlations.
+
+- AR(1) case:  forecasts have exponential shape (although increasing instead of decreasing)
+- AR(2) case:  forecasts look like a damped sinusoid (AR part has complex conjugate roots)
+
+
+2.  The forecasts tend toward teh realization mean as number of steps ahead increases.
+
+
+
+## 7.5 Forecasting with ARMA(p,q)
+
+
+### Example
+
+
+```{r 7.5.2.1, echo=FALSE, message=FALSE, results='hide'}
+
+# AR(2)
+
+x1 = gen.arma.wge(n=75, phi = c(1.6, -.8), sn=24)
+fore.arma.wge(x1, phi = c(1.6, -.8), n.ahead = 20, plot = TRUE, limits = FALSE)
+
+
+```
+
+```{r 7.5.2.2, echo=FALSE, message=FALSE, results='hide'}
+
+# ARMA(2,1)
+
+x2 = gen.arma.wge(n=75, phi = c(1.6, -.8), theta = -.9, sn=24)
+fore.arma.wge(x2, phi = c(1.6, -.8), theta = -.9, n.ahead = 20, plot = TRUE, limits = FALSE)
+
+
+```
+
+
+
+```{r 7.5.2.3 echo=FALSE, message=FALSE, results='hide'}
+
+# ARMA(1,1)
+
+x3 = gen.arma.wge(n=75, phi = c(.8), theta = -.9)
+fore.arma.wge(x3, phi = c(.8), theta = -.9, n.ahead = 20, plot = TRUE, limits = FALSE)
+
+
+```
+
+
+
+
+### Canadian Lynx Data
+
+```{r 7.5.3 echo=FALSE, message=FALSE, results='hide'}
+
+# Canadian Lynx Data
+
+data("llynx")
+plotts.wge
+
+
+# AR(4)
+fore.arma.wge(llynx, c(1.3, -.7, .1, -.2), n.ahead = 20, limits = FALSE)
+
+# ARMA(4,1)
+fore.arma.wge(llynx, c(.7, .1, -.2, -.3), theta = -.6, n.ahead = 20, limits = FALSE)
+
+# AR(11)
+fore.arma.wge(llynx, c(1.1676, -0.5446, 0.2662, -0.3094, 0.1540, -0.1463, 0.0569, -0.0294, 0.1346, 0.2021, -0.3394), n.ahead = 20, limits = FALSE)
+
+
+```
+
+## 7.6 Probability Limits and ARMA Forecasts
+
+### 7.6.4 Calculating Psi Weights with TSWGE
+
+
+```{r 7.6.4 message=FALSE}
+
+# psi_0 = 1, psi_1 = .7, psi_2 = .24, psi_3 = -.132, ...
+
+psi.weights.wge(phi = c(1.2, -.6), theta = .5, lag.max = 5)
+
+
+```
+
+### 7.6.6 Probability Limits for ARMA Forecasts with an Example
+
+
+
+```{r 7.6.6 message=FALSE}
+
+sigma_hat = .8659
+
+psi_0 = 1
+psi_1 = .7
+psi_2 = .24
+psi_3 = -.132
+
+l_1 = (1.96) * (sigma_hat) * psi_0
+l_1
+
+l_2 = (1.96) * (sigma_hat) * sqrt(1 + psi_1^2)
+l_2
+
+
+l_3 = (1.96) * (sigma_hat) * sqrt(1 + psi_1^2 + psi_2^2)
+l_3
+
+
+```
+
+$$\begin{equation}
+   (1 - .4B + .6B^2 - .8B^3)(X_t - 9) = a_t
+\end{equation}$$
+
+
+```{r 7.6.7 message=FALSE}
+
+# Assume that the variance of the error term is **3.49** and you are trying to find the prediction limits for the following model.
+
+# (1 - .4B + .6B^2 -.8B^3)(X_t -9) = a_t
+  
+# 1.  What is psi_3 for this model?  (Round to the nearest thousandth)
+
+# 2.  What is sigma_hat_a  (standard deviation rather than variance)  Round to the nearest hundredth
+
+# 3.  What is the half-width for the upper 95th% prediction limit for the 3rd prediction (l = 3)?  Round to the nearest hundredth
+
+
+psi.weights.wge(phi = c(.4, -.6, .8), lag.max = 5)
+
+sigma_hat = sqrt(3.49)
+sigma_hat
+
+psi_0 = 1
+psi_1 = .400
+psi_2 = -.440
+psi_3 = -.384
+
+l_1 = (1.96) * (sigma_hat) * psi_0
+l_1
+
+l_2 = (1.96) * (sigma_hat) * sqrt(1 + psi_1^2)
+l_2
+
+l_3 = (1.96) * (sigma_hat) * sqrt(1 + psi_1^2 + psi_2^2)
+l_3
+
+
+```
+
+```{r 7.6.8.1 message=FALSE}
+
+
+# AR(1) Phi Positive
+# data(fig6.1nf)
+# plotts.wge(fig6.1nf)
+
+fore.arma.wge(fig6.1nf, phi = .8, n.ahead = 20, plot = TRUE, limits = TRUE)
+
+```
+
+```{r 7.6.8.2 message=FALSE}
+
+
+# AR(2, 1) 
+data(fig6.2nf)
+
+fore.arma.wge(fig6.2nf, phi = c(1.2, -.6), theta = .5, n.ahead = 20, plot = TRUE, limits = TRUE)
+
+```
+
+## 7.7 Checking Forecasts: Cross Validation
+
+
+### 7.7.2 LASTN and ASE in TSWGE
+
+ASE = Average Squared Error
+
+
+```{r 7.7.2.1 message=FALSE}
+
+
+data("llynx")
+plotts.wge(llynx)
+
+lynx_forecast_ar4 = fore.arma.wge(llynx, phi = c(1.3, -0.7, 0.1, -0.2), n.ahead = 30, limits = FALSE, lastn = TRUE)
+ase = mean((lynx_forecast_ar4$f - llynx[85:114])^2)
+ase
+
+```
+
+
+```{r 7.7.2.2 message=FALSE}
+
+
+lynx_forecast_ar11 = fore.arma.wge(llynx, phi = c(1.17, -0.54, 0.27, -0.31, 0.15, -0.15, 0.06, -0.03, 0.13, 0.20, -0.34), n.ahead = 30, limits = FALSE, lastn = TRUE)
+ase = mean((lynx_forecast_ar11$f - llynx[85:114])^2)
+ase
+
+```
+### Soutwest Airlines Data
+
+```{r 7.7.3.1 message=FALSE}
+
+df_swa <- read.csv(file="../SWADelay.csv", header = TRUE)
+
+swa_forecast_ar12 = fore.arma.wge(df_swa$arr_delay, phi = c(.44, .02, -.12, .08, .00, .02, .06, -.09, .06, .07, .02, .37), n.ahead = 30, limits = FALSE, lastn = TRUE)
+
+ase = mean((swa_forecast_ar12$f - df_swa$arr_delay[148: 177])^2)
+ase
+
+```
+
+```{r 7.7.3.2 message=FALSE}
+
+# df_swa <- read.csv(file="../SWADelay.csv", header = TRUE)
+
+swa_forecast_arma121 = fore.arma.wge(df_swa$arr_delay, phi = c(.34, .07, -.11, .07, .01, .02, .06, -.09, .05, .07, .02, .39), theta = c(-.12), n.ahead = 30, limits = FALSE, lastn = TRUE)
+
+ase = mean((swa_forecast_arma121$f - df_swa$arr_delay[148: 177])^2)
+ase
+
+```
+
+## 7.8 Forecasting with ARIMA
+
+
+### ARIMA(0,1,0) Example
+
+```{r 7.8.3.1 echo=FALSE, message=FALSE, results='hide'}
+
+xd1 = gen.aruma.wge(n=75, d=1, sn=74)
+fore.aruma.wge(xd1, d = 1, n.ahead = 5, limits = FALSE)
+
+```
+### ARIMA(0,2,0)
+
+```{r 7.8.3.1 echo=FALSE, message=FALSE, results='hide'}
+
+xd1 = gen.aruma.wge(n=30, d=2)
+fore.aruma.wge(xd1, d = 2, n.ahead = 5, limits = FALSE)
+
+```
+
+
+### More ARIMA Examples
+
+#### ARIMA(0,1,0)
+
+```{r 7.8.4.1 echo=FALSE, message=FALSE, results='hide'}
+
+xd1 = gen.aruma.wge(n=50, phi = .8, d=1, sn=15) # ARIMA (1,1,0)
+fore.aruma.wge(xd1, d = 1, n.ahead = 20, limits = FALSE) # Forecast (0,1,0)
+
+```
+
+#### ARIMA(2,1,0)
+
+```{r 7.8.4.1 echo=FALSE, message=FALSE, results='hide'}
+
+xd1 = gen.aruma.wge(n=50, phi = .8, d=1, sn=15) # ARIMA (1,1,0)
+fore.aruma.wge(xd1, phi = .8, d = 1, n.ahead = 20, limits = FALSE) # Forecast (0,1,0)
+
+```
+
+#### ARIMA(0,2,0)
+
+```{r 7.8.4.1 echo=FALSE, message=FALSE, results='hide'}
+
+xd1 = gen.aruma.wge(n=50, phi = .8, d=1, sn=15) # ARIMA (1,1,0)
+fore.aruma.wge(xd1, d = 2, n.ahead = 20, limits = FALSE) # Forecast (0,1,0)
+
+```
+
+
+## 7.9 Forecasting with Seasonal Models
+
+### TSWGE
+
+Generating and Forecasting Simple Seasonal Models
+
+```{r 7.9.1 echo=FALSE, message=FALSE}
+
+xs4 = gen.aruma.wge(n=20, s=4, sn=6) 
+fore.aruma.wge(xs4, s = 4, n.ahead = 8, limits = FALSE) 
+
+fore.aruma.wge(xs4, s = 4, n.ahead = 8, limits = FALSE, lastn = TRUE) 
+
+```
+
+
+```{r 7.9.2 echo=TRUE, message=FALSE}
+
+xs4 = gen.aruma.wge(n=20, phi = .8, s=4, sn=6) 
+fore.aruma.wge(xs4, phi = .8, s = 4, n.ahead = 24, limits = FALSE) 
+
+```
+
+### Airlog Data
+
+#### Parzen
+
+```{r 7.9.4.1 echo=TRUE, message=FALSE}
+
+data(airlog)
+
+parzen = fore.aruma.wge(airlog, d = 0, s = 12, phi = c(.74, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, .38, -.2812), n.ahead = 36, lastn = TRUE, limits = FALSE)
+
+parzen_ase = mean((airlog[(144 - 36 + 1): 144] - parzen$f)^2)
+parzen_ase
+
+```
+
+
+
+## 7.9 Forecasting with Seasonal Models
+
+#### Box
+
+```{r 7.9.4.2 echo=FALSE, message=FALSE, results='hide'}
+
+# data(airlog)
+
+box = fore.aruma.wge(airlog, d = 1, s = 12, theta = c(.4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, .6, -.24), n.ahead = 36, lastn = TRUE, limits = FALSE)
+
+box_ase = mean((airlog[(144 - 36 + 1): 144] - box$f)^2)
+box_ase
+
+```
+
+
+
+#### Woodward/ Gray
+
+```{r 7.9.4.2 echo=FALSE, message=FALSE, results='hide'}
+
+# data(airlog)
+
+wood = fore.aruma.wge(airlog, d = 1, s = 12, phi = c(-.36, -.05, -.14, -.11, .04, .09, -.02, .17, .03, -.10, -.38), n.ahead = 36, lastn = TRUE, limits = FALSE)
+
+wood_ase = mean((airlog[(144 - 36 + 1): 144] - wood$f)^2)
+wood_ase
+
+```
+
+
+
+## 7.10 Signal Plus Noise Forecasts
+
+### TSWGE
+
+
+```{r 7.10.1 echo=FALSE, message=FALSE, results='hide'}
+
+x = gen.sigplusnoise.wge(n = 50, b0 = 10, b1 = .2, phi = c(.8, -.6))
+
+xfore = fore.sigplusnoise.wge(x, linear = TRUE, freq = 0, max.p = 5, n.ahead = 10, lastn = FALSE, plot = TRUE, limits = FALSE)
+
+
+```
+
+
+### Amazon Stock Price 
+
+```{r 7.10.1 echo=FALSE, message=FALSE, results='hide'}
+
+df_amazon <- read.csv(file="../AMZN.csv", header = TRUE)
+
+# x = gen.sigplusnoise.wge(n = 50, b0 = 10, b1 = .2, phi = c(.8, -.6))
+# 
+xfore = fore.sigplusnoise.wge(df_amazon$Adj.Close, linear = TRUE, freq = 0, max.p = 5, n.ahead = 30, lastn = FALSE, plot = TRUE, limits = TRUE)
+
+
+xfore$f[30]
+
+max(xfore$ul)
+
+min(xfore$ll) # 1703.74
+max(xfore$ll)
+
+```
+
+
+```{r}
+# Date Manipulation
+library(lubridate)
+
+# Metrics
+library(MLmetrics)
+
+# Time Series Analysis
+library(tseries)
+library(forecast)
+library(TSstudio)
+
+```
+
+
+```{r}
+
+df_optiplex <- read.csv(file="./data/sc_req_item.csv", header = TRUE)
+
+
+# df_optiplex$opened_at = as.POSIXct(strptime(df_optiplex$opened_at, "%Y-%m-%d %H:%M:%SS"))
+
+df_optiplex$opened = floor_date(mdy_hm(df_optiplex$opened_at), "day")
+
+
+```
+
+```{r}
+# ggplot(data=df_optiplex, aes(x = opened, y = quantity)) +
+#       geom_line() +
+#       ggtitle("Monthly Optiplex Purchases") +
+#       labs(x = "Curve Day", y = "Number of Cases")
+
+# https://stackoverflow.com/questions/33221425/how-do-i-group-my-date-variable-into-month-year-in-r/33221885
+
+gb <- df_optiplex %>% 
+    group_by(month = lubridate::floor_date(opened, "month")) %>%
+    summarize(summary_variable = sum(quantity))
+
+```
+
+```{r}
+
+ggplot(data=gb, aes(x = month, y = summary_variable)) +
+      geom_line() +
+      ggtitle("Monthly Optiplex Purchases") +
+      labs(x = "Month", y = "Quantity Purchased")
+
+```
+
+
+
+```{r}
+
+arima1 <- arima(gb$summary_variable, order=c(1, 1, 1))
+
+```
+
+```{r}
+forcast1 <- forecast(arima1, h=3)
+```
+
+```{r}
+plot(forcast1)
+legend(x = "topleft", legend = c("Predicted"), col = c("blue"), lty = c(1, 1))
+```
+
