@@ -60,6 +60,19 @@ parzen.wge(bike_diff)
 ```
 
 
+```{r for-live-session-google-doc-4}
+
+bike = fore.aruma.wge(df_dec_2012$count, phi = c(.4), d = 0, s = 24, n.ahead = 24, lastn = TRUE, plot = TRUE, limits = FALSE)
+
+bike_ase = mean((df_dec_2012$count[(456 - 24 + 1): 456] - bike$f)^2)
+bike_ase
+
+```
+
+
+
+
+
 ## Question 2
 
 2. Find the first 5 psi weights for the model below, and use them to find the half-width of the 95 percentile probability interval for the third forecast (Xhat(3)). Please show your work as well as a plot of the series and the first eight forecasts with probability intervals.
@@ -69,6 +82,10 @@ Hint: equations to help find sigma_hat_A and the formula for the confidence pred
 
 $$\begin{equation}
    (1 - .9B)(1 - .8B)X_{t} = a_{t}
+\end{equation}$$
+
+$$\begin{equation}
+   (1 - 1.7B + .72B^2)X_{t} = a_{t}
 \end{equation}$$
 
 First 8 Observations:
@@ -81,6 +98,49 @@ X_5 = 7
 X_6 = 6
 X_7 = 4
 X_8 = 3
+
+
+```{r question-two-a}
+
+# (1 - .9B)(1 - .8B)X_t = a_t
+
+factor.wge(c(1.7, -.72))
+
+psi.weights.wge(phi = c(1.7, -.72), lag.max = 5)
+
+```
+
+```{r question-two-b}
+
+X_1 = 5 
+X_2 = 8
+X_3 = 9
+X_4 = 8
+X_5 = 7
+X_6 = 6
+X_7 = 4
+X_8 = 3
+
+sigma_hat = NA
+
+psi_0 = 1
+psi_1 = 1.70000
+psi_2 = 2.17000
+psi_3 = 2.46500
+psi_4 = 2.62810
+psi_5 = 2.69297
+
+
+l_1 = (1.96) * (sigma_hat) * psi_0
+l_1
+
+l_2 = (1.96) * (sigma_hat) * sqrt(1 + psi_1^2)
+l_2
+
+l_3 = (1.96) * (sigma_hat) * sqrt(1 + psi_1^2 + psi_2^2)
+l_3
+```
+
 
 
 ## Question 3
@@ -97,12 +157,38 @@ X_8 = 3
 phis:  c(0.5511, 0.1680, -0.0145, 0.0651, 0.1388, -0.2966, 0.1539, 0.1270, -0.1815, 0.0364, 0.1456, 0.6287, -0.3832, -0.0199, -0.1679) 
 
 
+```{r question-three-model-1}
+
+df_amtrac <- read.csv(file="../AmtrakPassengersMonthly.csv", header = TRUE)
+
+model1 = fore.aruma.wge(df_amtrac$Ridership, d = 0, s = 0, phi = c(0.5511, 0.1680, -0.0145, 0.0651, 0.1388, -0.2966, 0.1539, 0.1270, -0.1815, 0.0364, 0.1456, 0.6287, -0.3832, -0.0199, -0.1679), n.ahead = 12, lastn = TRUE, limits = FALSE)
+
+
+model1_ase = mean((df_amtrac$Ridership[(159 - 12 + 1): 159] - model1$f)^2)
+model1_ase
+
+
+```
+
+
 **Model 2**
 
 (1"+ 0.027" 1𝐵"−0.7421" 𝐵^2)(1−𝐵^12)𝑋_𝑡=〖(1"+ 0" .5845𝐵"− " 0.3837𝐵^2)𝑎〗_𝑡
 
 phis: c(-0.02709541,  0.74213105)
 thetas: c(-0.5844596,  0.3836931)
+
+
+```{r question-three-model-2}
+
+model2 = fore.aruma.wge(df_amtrac$Ridership, d = 0, s = 12, phi = c(-0.02709541,  0.74213105), theta = c(-0.5844596,  0.3836931), n.ahead = 12, lastn = TRUE, limits = FALSE)
+
+
+model2_ase = mean((df_amtrac$Ridership[(159 - 12 + 1): 159] - model2$f)^2)
+model2_ase
+
+
+```
 
 
 
@@ -112,6 +198,18 @@ thetas: c(-0.5844596,  0.3836931)
 
 phi: 0.306943
 theta: 0.7431719
+
+
+```{r question-three-model-3}
+
+model3 = fore.aruma.wge(df_amtrac$Ridership, d = 1, s = 12, phi = 0.306943, theta = 0.7431719, n.ahead = 12, lastn = TRUE, limits = FALSE)
+
+
+model3_ase = mean((df_amtrac$Ridership[(159 - 12 + 1): 159] - model3$f)^2)
+model3_ase
+
+
+```
 
 
 
@@ -290,7 +388,7 @@ fore.arma.wge(x2, phi = c(1.6, -.8), theta = -.9, n.ahead = 20, plot = TRUE, lim
 
 
 
-```{r 7.5.2.3 echo=FALSE, message=FALSE, results='hide'}
+```{r 7.5.2.3, echo=FALSE, message=FALSE, results='hide'}
 
 # ARMA(1,1)
 
@@ -305,7 +403,7 @@ fore.arma.wge(x3, phi = c(.8), theta = -.9, n.ahead = 20, plot = TRUE, limits = 
 
 ### Canadian Lynx Data
 
-```{r 7.5.3 echo=FALSE, message=FALSE, results='hide'}
+```{r 7.5.3, echo=FALSE, message=FALSE, results='hide'}
 
 # Canadian Lynx Data
 
@@ -330,7 +428,7 @@ fore.arma.wge(llynx, c(1.1676, -0.5446, 0.2662, -0.3094, 0.1540, -0.1463, 0.0569
 ### 7.6.4 Calculating Psi Weights with TSWGE
 
 
-```{r 7.6.4 message=FALSE}
+```{r 7.6.4, message=FALSE}
 
 # psi_0 = 1, psi_1 = .7, psi_2 = .24, psi_3 = -.132, ...
 
@@ -343,7 +441,7 @@ psi.weights.wge(phi = c(1.2, -.6), theta = .5, lag.max = 5)
 
 
 
-```{r 7.6.6 message=FALSE}
+```{r 7.6.6, message=FALSE}
 
 sigma_hat = .8659
 
@@ -370,7 +468,7 @@ $$\begin{equation}
 \end{equation}$$
 
 
-```{r 7.6.7 message=FALSE}
+```{r 7.6.7, message=FALSE}
 
 # Assume that the variance of the error term is **3.49** and you are trying to find the prediction limits for the following model.
 
@@ -405,7 +503,7 @@ l_3
 
 ```
 
-```{r 7.6.8.1 message=FALSE}
+```{r 7.6.8.1, message=FALSE}
 
 
 # AR(1) Phi Positive
@@ -416,7 +514,7 @@ fore.arma.wge(fig6.1nf, phi = .8, n.ahead = 20, plot = TRUE, limits = TRUE)
 
 ```
 
-```{r 7.6.8.2 message=FALSE}
+```{r 7.6.8.2, message=FALSE}
 
 
 # AR(2, 1) 
@@ -434,7 +532,7 @@ fore.arma.wge(fig6.2nf, phi = c(1.2, -.6), theta = .5, n.ahead = 20, plot = TRUE
 ASE = Average Squared Error
 
 
-```{r 7.7.2.1 message=FALSE}
+```{r 7.7.2.1, message=FALSE}
 
 
 data("llynx")
@@ -447,7 +545,7 @@ ase
 ```
 
 
-```{r 7.7.2.2 message=FALSE}
+```{r 7.7.2.2, message=FALSE}
 
 
 lynx_forecast_ar11 = fore.arma.wge(llynx, phi = c(1.17, -0.54, 0.27, -0.31, 0.15, -0.15, 0.06, -0.03, 0.13, 0.20, -0.34), n.ahead = 30, limits = FALSE, lastn = TRUE)
@@ -457,7 +555,7 @@ ase
 ```
 ### Soutwest Airlines Data
 
-```{r 7.7.3.1 message=FALSE}
+```{r 7.7.3.1, message=FALSE}
 
 df_swa <- read.csv(file="../SWADelay.csv", header = TRUE)
 
@@ -468,7 +566,7 @@ ase
 
 ```
 
-```{r 7.7.3.2 message=FALSE}
+```{r 7.7.3.2, message=FALSE}
 
 # df_swa <- read.csv(file="../SWADelay.csv", header = TRUE)
 
@@ -484,7 +582,7 @@ ase
 
 ### ARIMA(0,1,0) Example
 
-```{r 7.8.3.1 echo=FALSE, message=FALSE, results='hide'}
+```{r 7.8.3.1, echo=FALSE, message=FALSE, results='hide'}
 
 xd1 = gen.aruma.wge(n=75, d=1, sn=74)
 fore.aruma.wge(xd1, d = 1, n.ahead = 5, limits = FALSE)
@@ -492,7 +590,7 @@ fore.aruma.wge(xd1, d = 1, n.ahead = 5, limits = FALSE)
 ```
 ### ARIMA(0,2,0)
 
-```{r 7.8.3.1 echo=FALSE, message=FALSE, results='hide'}
+```{r 7.8.3.2, echo=FALSE, message=FALSE, results='hide'}
 
 xd1 = gen.aruma.wge(n=30, d=2)
 fore.aruma.wge(xd1, d = 2, n.ahead = 5, limits = FALSE)
@@ -504,7 +602,7 @@ fore.aruma.wge(xd1, d = 2, n.ahead = 5, limits = FALSE)
 
 #### ARIMA(0,1,0)
 
-```{r 7.8.4.1 echo=FALSE, message=FALSE, results='hide'}
+```{r 7.8.4.1, echo=FALSE, message=FALSE, results='hide'}
 
 xd1 = gen.aruma.wge(n=50, phi = .8, d=1, sn=15) # ARIMA (1,1,0)
 fore.aruma.wge(xd1, d = 1, n.ahead = 20, limits = FALSE) # Forecast (0,1,0)
@@ -513,7 +611,7 @@ fore.aruma.wge(xd1, d = 1, n.ahead = 20, limits = FALSE) # Forecast (0,1,0)
 
 #### ARIMA(2,1,0)
 
-```{r 7.8.4.1 echo=FALSE, message=FALSE, results='hide'}
+```{r 7.8.4.2, echo=FALSE, message=FALSE, results='hide'}
 
 xd1 = gen.aruma.wge(n=50, phi = .8, d=1, sn=15) # ARIMA (1,1,0)
 fore.aruma.wge(xd1, phi = .8, d = 1, n.ahead = 20, limits = FALSE) # Forecast (0,1,0)
@@ -522,7 +620,7 @@ fore.aruma.wge(xd1, phi = .8, d = 1, n.ahead = 20, limits = FALSE) # Forecast (0
 
 #### ARIMA(0,2,0)
 
-```{r 7.8.4.1 echo=FALSE, message=FALSE, results='hide'}
+```{r 7.8.4.3, echo=FALSE, message=FALSE, results='hide'}
 
 xd1 = gen.aruma.wge(n=50, phi = .8, d=1, sn=15) # ARIMA (1,1,0)
 fore.aruma.wge(xd1, d = 2, n.ahead = 20, limits = FALSE) # Forecast (0,1,0)
@@ -536,7 +634,7 @@ fore.aruma.wge(xd1, d = 2, n.ahead = 20, limits = FALSE) # Forecast (0,1,0)
 
 Generating and Forecasting Simple Seasonal Models
 
-```{r 7.9.1 echo=FALSE, message=FALSE}
+```{r 7.9.1, echo=FALSE, message=FALSE}
 
 xs4 = gen.aruma.wge(n=20, s=4, sn=6) 
 fore.aruma.wge(xs4, s = 4, n.ahead = 8, limits = FALSE) 
@@ -546,7 +644,7 @@ fore.aruma.wge(xs4, s = 4, n.ahead = 8, limits = FALSE, lastn = TRUE)
 ```
 
 
-```{r 7.9.2 echo=TRUE, message=FALSE}
+```{r 7.9.2, echo=TRUE, message=FALSE}
 
 xs4 = gen.aruma.wge(n=20, phi = .8, s=4, sn=6) 
 fore.aruma.wge(xs4, phi = .8, s = 4, n.ahead = 24, limits = FALSE) 
@@ -557,7 +655,7 @@ fore.aruma.wge(xs4, phi = .8, s = 4, n.ahead = 24, limits = FALSE)
 
 #### Parzen
 
-```{r 7.9.4.1 echo=TRUE, message=FALSE}
+```{r 7.9.4.1, echo=TRUE, message=FALSE}
 
 data(airlog)
 
@@ -574,7 +672,7 @@ parzen_ase
 
 #### Box
 
-```{r 7.9.4.2 echo=FALSE, message=FALSE, results='hide'}
+```{r 7.9.4.2, echo=FALSE, message=FALSE, results='hide'}
 
 # data(airlog)
 
@@ -589,7 +687,7 @@ box_ase
 
 #### Woodward/ Gray
 
-```{r 7.9.4.2 echo=FALSE, message=FALSE, results='hide'}
+```{r 7.9.4.3, echo=FALSE, message=FALSE, results='hide'}
 
 # data(airlog)
 
@@ -607,7 +705,7 @@ wood_ase
 ### TSWGE
 
 
-```{r 7.10.1 echo=FALSE, message=FALSE, results='hide'}
+```{r 7.10.1, echo=FALSE, message=FALSE, results='hide'}
 
 x = gen.sigplusnoise.wge(n = 50, b0 = 10, b1 = .2, phi = c(.8, -.6))
 
@@ -619,7 +717,7 @@ xfore = fore.sigplusnoise.wge(x, linear = TRUE, freq = 0, max.p = 5, n.ahead = 1
 
 ### Amazon Stock Price 
 
-```{r 7.10.1 echo=FALSE, message=FALSE, results='hide'}
+```{r 7.10.2, echo=FALSE, message=FALSE, results='hide'}
 
 df_amazon <- read.csv(file="../AMZN.csv", header = TRUE)
 
@@ -653,7 +751,7 @@ library(TSstudio)
 ```
 
 
-```{r}
+```{r purchases-1}
 
 df_optiplex <- read.csv(file="./data/sc_req_item.csv", header = TRUE)
 
@@ -665,7 +763,7 @@ df_optiplex$opened = floor_date(mdy_hm(df_optiplex$opened_at), "day")
 
 ```
 
-```{r}
+```{r purchases-2}
 # ggplot(data=df_optiplex, aes(x = opened, y = quantity)) +
 #       geom_line() +
 #       ggtitle("Monthly Optiplex Purchases") +
@@ -679,7 +777,7 @@ gb <- df_optiplex %>%
 
 ```
 
-```{r}
+```{r purchases-3}
 
 ggplot(data=gb, aes(x = month, y = summary_variable)) +
       geom_line() +
@@ -690,18 +788,22 @@ ggplot(data=gb, aes(x = month, y = summary_variable)) +
 
 
 
-```{r}
+```{r purchases-4}
 
 arima1 <- arima(gb$summary_variable, order=c(1, 1, 1))
 
 ```
 
-```{r}
+```{r purchases-5}
 forcast1 <- forecast(arima1, h=3)
 ```
 
-```{r}
+```{r purchases-6}
 plot(forcast1)
 legend(x = "topleft", legend = c("Predicted"), col = c("blue"), lty = c(1, 1))
 ```
+
+
+
+
 
