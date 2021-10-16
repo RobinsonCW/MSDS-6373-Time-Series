@@ -1,0 +1,188 @@
+---
+title: "Unit 9 - Model Identification for Stationary Models"
+output: html_notebook
+---
+
+# For Live Session
+
+```{r library-imports}
+
+library(tidyverse)
+library(tswge)
+
+```
+
+
+
+## Question 1 
+
+In preparation for the next live session, complete the following. Be sure and submit your work to the "Unit 9: "For Live Session" Assignment" assignment on 2DS:
+
+Please address each activity on at least one PowerPoint slide and submit via the online campus. 
+
+Using the Texas gas price data (`TexasGasPrices.csv`), we found that an AR(2) was the model suggested by both the AIC and BIC. We would now like to compare the fit from using the maximum likelihood and Burg estimates. 
+
+Provide as much detail as you need to adequately describe the question of interest. For example
+
+- Provide detail and context, in addition to a number, for questions asking for an estimate.
+- You may/should provide code (because your audience is your peers).
+- You should provide adequate labels.
+- Any other pertinent details to sufficiently convey your response.
+
+
+Using at least one slide per question
+
+- Fit an AR(2) to the data using the maximum likelihood estimates like you did in the Concept Check question.
+- Fit and AR(2) to the data using the Burg estimates.  Display and describe.
+- Find the ASE for the maximum likelihood fit by forecasting the last 24 weeks of the series.
+- Find the ASE for the Burg fit by forecasting the last 24 weeks of the series.
+- Which model would you choose?
+
+
+
+# Asynchronous Material
+
+## 9.1 Introduction
+
+### Introduction and Setting
+
+
+**Model Free Methods**
+
+- Windowed spectral estimators
+- Sample autocorrelations
+- Filtering procedures
+
+
+**Model Dependent Techniques**
+
+- AR models
+- Signal-plus-noise models
+- ARMA models
+- ARIMA models
+- Seasonal models
+
+## 9.2 Estimation: Introduction
+
+### Estimation Methods for Stationary Models
+
+  `est.arma.wge`
+    - Maximum likelihood estimation only
+  `est.ar.wge`
+    - Maximum likelihood
+    - Yule-Walker
+    - Burger
+    
+    
+- For ARMA(p,q) models with q > 0, tswge only produces maximum likelihood estimates.
+
+- For AR(p) models, tswge provides ML, YW. and Burg estimates
+
+
+
+    
+## 9.3 Estimation: Maximum Likelihood Estimation
+
+### 9.3.1  
+
+- Involves maximizing the likelihood function L = f(x_1, x_2, ..., x_n), which is the joint distribution of the time series realization
+
+- Iterative, computationally intensive procedure
+
+- Involves distributional assumptions about white noise (we will assume normal white noise)
+
+- Is applicable to AR(p), MA(q) and ARMA(p,q) models
+
+
+### 9.3.2 tswge
+
+The key function for ML estimation in an ARMA model is `est.arma.wge`(data, p, q)
+
+Type:  
+
+- mle (only)
+
+However, if you know that the model is an AR(p) model, then you can use
+
+`est.ar.wge`(data, p, q, type)
+
+Types:
+
+- mle (default)
+- yw
+- burg
+
+
+Final Model Estimation
+
+$$\begin{equation}
+   (1 - 1.64B + .81B^2)(X_t - 49.96) = (1 - .87B)a_t ;  \sigma^2_a = 5.19
+\end{equation}$$
+
+```{r 9.3.2.1}
+
+# ARMA(2,1)
+
+# (1 - 1.6B + .8B^2)(X_t - 50) = (1 - .8B)a_t, sigma_squared = 5
+
+x21 = gen.arma.wge(n=100, phi = c(1.6, -.8), theta = .8, vara = 5, sn = 55, plot = FALSE)
+x21 = x21 + 50 # gen.arma generates data from a zero mean model.  
+plot.ts(x21)
+# We use this strategy to generate the AR(2) model with mean 50.
+est.arma.wge(x21, p=2, q=1)
+mean(x21)
+
+
+```
+
+Final Model Estimation
+
+$$\begin{equation}
+   (1 - .06B + .69B^2 - .11B^3 + .68B^4)(X_t - 19.98) = a_t ;  \sigma^2_a = 8.78
+\end{equation}$$
+
+
+
+```{r 9.3.2.2}
+
+# ARMA(2,1)
+
+# (1 + .7B^2 - .1B^3 + .72B^4)(X_t - 20) = a_t, sigma_squared = 10
+
+x21 = gen.arma.wge(n=100, phi = c(0, -.7, .1, -.72), vara = 4, sn = 72, plot = FALSE)
+x21 = x21 + 20 # gen.arma generates data from a zero mean model.  
+plot.ts(x21)
+# We use this strategy to generate the AR(2) model with mean 50.
+est.arma.wge(x21, p=4, q=1)
+mean(x21)
+
+
+```
+
+
+```{r 9.3.3}
+
+# ARMA(2,1)
+
+# (1 - .3B + .7B^2)(X_t - 37) = (1 + .4B)a_t, sigma_squared = 4
+
+x21 = gen.arma.wge(n=200, phi = c(.3, -.7), theta = -.4, vara = 4, sn = 27, plot = FALSE)
+x21 = x21 + 37 # gen.arma generates data from a zero mean model.  
+plot.ts(x21)
+# We use this strategy to generate the AR(2) model with mean 50.
+est.arma.wge(x21, p=2, q=1)
+mean(x21)
+
+
+
+```
+    
+## 9.4 Estimation: Yule–Walker Estimates
+
+Change p_k to p_k (hat) and solve the resulting system of equations for phi_1_hat, ..., phi_p_hat
+
+
+These are the Yule-Walker estimates
+
+
+## 9.5 Estimation: Burg Estimates
