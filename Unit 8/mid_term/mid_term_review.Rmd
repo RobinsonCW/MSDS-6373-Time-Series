@@ -1,0 +1,467 @@
+---
+title: "R Notebook"
+---
+
+
+```{r library-imports}
+
+library(tidyverse)
+library(tswge)
+
+```
+
+
+# Unit 1 - Stationarity
+
+## 1.2 Notation, Terminology, Motivation, and Examples
+
+
+
+## 1.3 Review of Expected Value, Variance, Covariance, and Correlation
+
+### 1.3.1 Expected Value
+
+$$\begin{equation}
+\mathrm{E}[X] = \mu
+\end{equation}$$
+
+## 1.3.2 Variance
+
+
+$$\begin{equation}
+Var(X) = \mathrm{E}[(X - \mu)^2]
+\end{equation}$$
+
+
+$$\begin{equation}
+   \hat{\gamma_0} = \hat{\sigma^2_x} = \frac{\sum(x_i - \bar{x})^2}{n}
+\end{equation}$$
+
+
+## 1.3.3 Covariance
+
+
+
+## 1.4 Stationarity: Condition 1
+
+Subpopulations of X_t have the same mean for each t. Restated, the mean does not depend on time (t).
+
+## 1.5 Stationarity: Condition 2
+
+Subpopulations of X for a given time have a finite and constant variance for all t. Restated, the variance does not depend on time.
+
+
+## 1.6 Stationarity: Condition 3, Part I
+
+## 1.7 Stationarity: Condition 3, Part II
+
+The correlation of X_t1 and X_t2 depends only on t_2 - t_1. That is,the correlation between 
+data points is dependent only on how far apart they are, not where they are. 
+
+## 1.8 Stationary Time Series
+
+## 1.9 Estimation, Part I
+
+## 1.10 Estimation, Part II
+
+## Howework
+
+
+
+# Unit 4 - AR(2) and AR(p)
+
+## 4.1 Review: AR(1)
+
+ - Realizations are wandering or oscillating depending on whether the root of the characteristic equation is positive or negative, respectively.
+
+- Autocorrelations are damped exponentials depending on whether the root of the characteristic equations is positive or negative, respectively.
+
+- Spectral densities have a peak at f=0 or f=.5 depending on whether the root of the characteristic equations is positive or negative, respectively.
+
+
+## 4.2 AR(2): Introduction and Stationarity
+
+
+### 4.2.2
+
+Expected value
+
+$$\begin{equation}
+\mathrm{E}[X_t] = \mu
+\end{equation}$$
+
+
+
+Variance
+
+$$\begin{equation}
+   \sigma_X^2 = \frac{\sigma_a^2}{1 - \phi_1\rho_1 - \phi_2\rho_2}
+\end{equation}$$
+
+
+
+### 4.2.3  AR(2) Processes: Zero Mean Form
+
+Alternative form of zero mean AR(2) model
+
+$$\begin{equation}
+   X_t - \phi_1X_{t-1} - \phi_2X_{t-2} = a_t
+\end{equation}$$
+
+## 4.3 AR(2): Backshift Operator
+
+
+$$\begin{equation}
+   X_t - \phi_1BX_t - \phi_2B^2X_t = a_t
+\end{equation}$$
+
+
+or 
+
+
+$$\begin{equation}
+   (1 - \phi_1B - \phi_2B^2)X_t = a_t
+\end{equation}$$
+
+## 4.4 AR(2): Characteristic Equation and Stationarity
+
+### 4.4.1
+
+An AR(2) model is stationary if and only if the roots of the characteristic equation are outside of the unit circle.
+
+
+Characteristic Equation
+
+$$\begin{equation}
+   1 - \phi_1Z - \phi_2Z^2 = 0
+\end{equation}$$
+
+
+Roots of the characteristic equation
+
+1.  Either 2 real roots
+2.  r1, r2 will be complex conjugate pairs
+
+
+```{r 4.4.7}
+
+# X_t - .4X_t-1 + .7X_t-2 = a_t
+
+
+
+a = -.7
+b = .4
+c = 1
+
+
+z = ( -b + sqrt(b^2 - (4 * a * c)) ) / (2 * a)
+z
+
+z = ( -b - sqrt(b^2 - (4 * a * c)) ) / (2 * a)
+z
+
+# Factor Table
+factor.wge(phi = c(.4, -.7))
+
+
+# plotts.true.wge(phi = c(.4, -.7))
+
+
+```
+
+
+
+## 4.5 AR(2): Behavior—Case 1: Two Real Roots
+
+
+### 4.5.2
+
+
+```{r 4.5.2 }
+
+# Xt - .2X_t-1 - .48X_t-2  Two Positive
+
+
+factor.wge(phi = c(-.9, -.2))
+
+# x = gen.arma.wge(200, phi = c(.2, .48))
+# # 
+# plotts.sample.wge(x)
+
+```
+
+# Unit 5 | Moving Average (MA(q)) and ARMA(p,q) Models
+
+## 5.2 MA(q): Properties and Characteristics, Part I
+
+### Equation for rho 1
+
+$$\begin{equation}
+   \rho_1 = \frac{-\theta_1}{1 + \theta_1^2}
+\end{equation}$$
+
+
+
+```{r 5.2.2}
+
+# X_t = a_t -.99a_t-1 
+
+
+theta1 = .9
+
+p0 = 1
+p1 = NA
+p2 = 0
+p3 = 0
+
+
+p1 = (-(theta1)) / (1 + (theta1^2))
+p1
+
+
+
+```
+
+### Equation for rho 2
+
+$$\begin{equation}
+   \rho_2 = \frac{-\theta_2}{1 + \theta_1^2 + \theta_2^2}
+\end{equation}$$
+
+
+
+```{r 5.2.7}
+
+# X_t = a_t -.5a_t-1 + .9a_t-2
+
+
+theta1 = .5
+theta2 = -.9
+
+p0 = 1
+p1 = NA
+p2 = NA
+p3 = 0
+
+
+p1 = (-(theta1) + (theta1 * theta2)) / (1 + (theta1^2 + theta2^2))
+p1
+
+
+p2 = -(theta2) / (1 + (theta1^2 + theta2^2))
+p2
+
+
+
+```
+
+
+## 5.3 MA(q), Properties and Characteristics, Part II
+
+MA behavior is most useful in the formulation of ARMA(p, q) models.
+
+### 5.3.1 tswge
+
+
+```{r 5.3.1.1}
+
+# Generating MA(1) data
+
+# gen.arma.wge(n=100, theta=.99)
+# gen.arma.wge(n=100, theta=-.99)
+# gen.arma.wge(n=100, theta=.99, sn=5)
+# gen.arma.wge(n=100, theta=-.99, sn=5)
+plotts.true.wge(theta=c(-.1, .3))
+
+```
+
+
+## 5.4 MA(q), Invertibility
+
+
+Note:  Two models with the same autocorrelations is undesirable.  (model multiplicity)
+
+
+MA models are __invertible__ if and only if all roots of the MA characteristic equation are outside of the unit circle.
+
+
+Is this model invertible?  Yes, its root is outside the unit circle.
+
+$$\begin{equation}
+   X_{t} = a_{t} + .7X_{a-1}
+\end{equation}$$
+
+
+
+```{r}
+
+
+# X_t = (1 + .7B)a_t
+# 1 + .7Z = 0 (characteristic equation)
+
+z = -1 / .7
+
+z
+
+```
+
+### 5.4.3 MA(q) Invertablity
+
+```{r 5.4.3.1}
+
+
+# MA(2) X_t = a_t -1.6a_t-1 + .9a_t-2 
+
+factor.wge(phi=c(1.6,-.9))
+
+### Abs Recip < 1 (and therefore outside of the unit circle which is invertable)
+
+```
+
+
+## 5.5 ARMA(p,q), Properties and Characteristics
+
+```{r 5.5.5}
+
+# factor.wge(phi = c(-.1, -.82, .16,))
+
+# plotts.true.wge(phi = c(-.1, -.82, .16), theta = -.2)
+
+plotts.true.wge(phi = c(.1, -.5, .7), theta = c(.72, -.8))
+
+
+```
+
+
+
+# Unit 7 - Forecasting
+
+## 7.2 Forecasting Is Extrapolating
+
+
+## 7.3 Strategy and Notation
+
+t_0 is called the forecast origin
+
+l is the lead time, i.e, the number of time units (steps ahead) which we want to forecast
+
+X_hat_10 (2) is the forecast of X_12
+
+## 7.4 Forecasting with AR(p) Models
+
+$$\begin{equation}
+   {X_t} - \phi_1{X_t}_1 = (1 - \phi_1)\mu + a_t
+\end{equation}$$
+
+## 7.5 Forecasting with ARMA(p,q)
+
+## 7.6 Probability Limits and ARMA Forecasts
+
+### 7.6.4 Calculating Psi Weights with TSWGE
+
+ - psi_0 = 1, psi_1 = .7, psi_2 = .24, psi_3 = -.132, ...
+
+ - psi.weights.wge(phi = c(1.2, -.6), theta = .5, lag.max = 5)
+
+
+## 7.7 Checking Forecasts: Cross Validation
+
+
+
+
+```{r}
+
+
+data(UKDriverDeaths)
+
+aic5.wge(UKDriverDeaths)
+
+```
+
+```{r}
+
+ar_4_2 = fore.arma.wge(UKDriverDeaths, phi = c(-0.67, 0.47, 0.36, -0.18), theta = c(-1.46, -0.61), n.ahead = 12, lastn = TRUE, limits = FALSE)
+
+
+```
+
+```{r}
+ar_4_2_ase = mean((UKDriverDeaths[(192 - 12 + 1): 192] - ar_4_2$f)^2)
+ar_4_2_ase
+```
+
+
+
+```{r}
+
+seasonalf = fore.aruma.wge(UKDriverDeaths, s = 12, n.ahead = 12, lastn = FALSE, limits = TRUE)
+
+
+```
+
+
+```{r}
+
+seasonal_ase = mean((UKDriverDeaths[(192 - 12 + 1): 192] - seasonal$f)^2)
+seasonal_ase
+
+
+```
+
+```{r question-two-a}
+
+# (1 - .9B)(1 - .8B)X_t = a_t
+
+# ()
+
+# factor.wge(c(.3, -.9))
+
+psi.weights.wge(phi = c(.3, -.9), lag.max = 5)
+
+```
+
+```{r}
+
+
+X_1 = 1
+X_2 = 5
+X_3 = 4
+X_4 = 6
+X_5 = 8
+X_6 = 10
+X_7 = 9
+X_8 = 11
+
+X_bar = c(1, 5, 4, 6, 8, 10, 9, 11)
+
+sigma_hat = sqrt(1.82)
+
+psi_0 = 1
+psi_1 = 0.30000
+psi_2 = -0.81000
+psi_3 = NA
+
+
+l_1 = (1.96) * (sigma_hat) * psi_0
+l_1
+
+l_2 = (1.96) * (sigma_hat) * sqrt(1 + psi_1^2)
+l_2
+
+l_3 = (1.96) * (sigma_hat) * sqrt(1 + psi_1^2 + psi_2^2)
+l_3
+
+```
+
+
+
+```{r}
+
+X = c(10.05, -9.42, 8.82, -8.34, 8.07, -7.76, 7.46, -7.22, 7.01, -6.66, 6.28, -5.87, 5.46, -4.97, 4.65, -4.30, 4.01, -3.72, 3.24, -2.81, 2.44)
+
+mean(X)
+
+summarise(X)
+
+```
+
