@@ -340,4 +340,140 @@ acf(df_white_noise$x)
 ## 9.9 Model Identification: AIC Type, Part I
 
 
+### 9.9.1
+
+- Method 1 (AIC)
+- Method 2 (Box-Jenkins)
+
+Akaike's Information Criterion (AIC)
+
+A general criterion for statistical model identification you have seen before in other settings.
+
+AIC is actually one of a number of information-based criterion.
+
+AICC
+BIC
+Others
+
+### 9.9.2
+
+Adding variables to an existing equation will always reduce the residual/ unexplained variability
+
+In ARMA modeling, the unexplained variability is measured by sigma squared (a)
+
+### 9.9.3 AIC in ARMA modeling
+
+AIC:  imposes a penalty for adding terms
+
+$$\begin{equation}
+   AIC = ln(\hat\sigma^2_a) + 2(p + q + 1) / n
+\end{equation}$$
+
+- AIC has a tendency to select a higher-order model as the realization length increases.
+
+- BIC imposes a stronger penalty for increasing p and q.
+
+  - It tends to pick models with fewer parameters.
+  - It avoids the problem of "over-modeling" large data sets.
+
+
+- AICC has a penatly between that for AIC and BIC
+
+- AIC and its variations are for selecting a stationary ARMA model.
+
+
+
+```{r 9.9.4.1}
+
+# Generate Data from an ARMA(1,1):  (1 - .967B)(X_t - 2.20) = (1 + .477B)a_t  ; sigma_2 = .0139
+
+# Answer -4.20
+
+x = gen.arma.wge(n = 100, phi = c(.967), theta = -.477, vara = .0139, sn = 53, plot = FALSE)
+x = x + 2.20
+plotts.wge(x)
+
+x.mle = est.arma.wge(x, p=1, q=1)
+x.mle$avar
+
+# mean(x.mle$res^2)
+
+aic.wge(x, p=1, q=1, type = "aic")
+
+
+```
+
+
+```{r 9.9.4.2}
+
+# Generate Data from an ARMA(3, 0):  (1 - .1.45B + .734B^2 - .261B^3)(X_t - 2.20) = a_t  ; sigma_2 = .0137
+
+# Answer -4.19
+
+
+x = gen.arma.wge(n = 100, phi = c(1.45, -.734, .261), vara = .0137, sn = 53, plot = FALSE)
+x = x + 2.20
+plotts.wge(x)
+
+x.mle = est.arma.wge(x, p=3, q=0)
+x.mle$avar
+
+# mean(x.mle$res^2)
+
+aic.wge(x, p=3, q=0, type = "aic")
+
+
+```
+
+## 9.10 Model Identification: AIC Type, Part II
+
+
+### 9.10.1 AIC in tswge
+
+`aic.wge(x, p=0:5, q=0:2, type = "aic")`
+
+### 9.10.2 AIC demo
+
+
+
+```{r 9.10.2.1}
+
+# Generate Data from an AR(3):  (1 - 2.555B + .2.42B^2 - .855B^3) = a_t  ; sigma_2 = 1
+# factored form (1 - .95B)(1 - 1.6B + .9B^2)X_t =- a_t
+
+# AIC Demo: aic.wge
+# fig3.16a is a realization from the AR(3) model
+
+data("fig3.16a")
+# plotts.sample.wge provides a "look" at the data (which we always recommend)
+plotts.sample.wge(fig3.16a)
+# let tswge find the model with the lowest aic
+aic.wge(fig3.16a, p=0:5, q=0:2, type="aic")
+mean(fig3.16a)
+
+
+```
+
+
+```{r 9.10.2.2}
+
+# Generate data from the AR(2,1)
+
+x = gen.arma.wge(n=100, phi=c(1.6, -.9), theta=.8, sn=67, plot = FALSE)
+x = x+10
+
+plotts.sample.wge(x)
+# no types listed below so it will use aic
+aic.wge(x, p=0:8, q=0:4)
+# picks ARMA(2,1)
+est.arma.wge(x, p=2, q=1)
+mean(x)
+
+
+```
+
+### 9.10.4
+
+tswge and AIC5/ Top 5 Models
+
 
