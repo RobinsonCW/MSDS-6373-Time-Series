@@ -186,3 +186,158 @@ These are the Yule-Walker estimates
 
 
 ## 9.5 Estimation: Burg Estimates
+
+In AR models, there is no preference in time direction (recall p_k = p_-k)
+
+Goal is to minimize forward-backward least squares.
+
+Burg showed how to miminize the forward-backward least squares, while at the same time assuring a stationary solution.
+
+### 9.4.4
+
+- Maximum likelihood estimation
+
+_Estimates found by finding the values that provide the largest value of the joint distribution of the time series realization. This is an iterative procedure._
+
+- Yule–Walker estimation
+
+_Estimates found by solving a system of linear equations by estimating the autocorrelations._
+
+- Burg estimation
+
+_Estimates found by minimizing the forward backward least squares._
+
+Match the estimation models to the correct description.
+
+### 9.5.5   
+
+Which estimates can estimate parameters from both stationary and nonstationary models?
+
+_Maximum likelihood estimates_
+
+
+### 9.5.6
+
+```{r 9.5.6}
+
+# Generate Data from an AR(2):  (1 - 1.6B + .9B^2)X_t = a_t
+
+x = gen.arma.wge(n = 200, phi = c(1.6, -.9), vara = 37, sn = 33)
+plotts.wge(x)
+
+# Yule-Walker Estimates
+x.yw = est.ar.wge(x, p=2, type = "yw")
+x.yw
+
+# Burg Estimates
+x.burg = est.ar.wge(x, p=2, type="burg")
+x.burg
+
+
+# Maximum Likelihood Estimates
+x.mle = est.ar.wge(x, p=2, type="mle")
+x.mle
+
+```
+
+
+### 9.5.7
+
+```{r 9.5.7}
+
+# Generate Data from an AR(2):  (1 - .3B + .7B^2)(X_t - 37) = (1 + .4B)a_t  ; sigma_2 = 4
+
+x = gen.arma.wge(n = 200, phi = c(.3, -.7), theta = -.4, vara = 4, sn = 33, plot = FALSE)
+x = x + 37
+plotts.wge(x)
+
+# Maximum Likelihood Estimates
+x.mle= est.arma.wge(x, p=2, q = 1)
+x.mle
+
+
+```
+
+### 9.5.8
+
+```{r 9.5.8}
+
+# Generate Data from an AR(2):  (1 - .3B + .7B^2)(X_t - 37) = a_t  ; sigma_2 = 4
+
+x = gen.arma.wge(n = 200, phi = c(.3, -.7), vara = 4, sn = 33, plot = FALSE)
+x = x + 37
+plotts.wge(x)
+
+# Burg Estimates
+x.burg = est.ar.wge(x, p=2, type = "burg")
+x.burg
+
+
+```
+
+## 9.6 Estimation: When It Makes a Difference
+
+### 9.6.1
+
+When the real roots are close to the unit circle, the Yule-Walker method does not perform well.
+
+### 9.6.2
+
+Models should not be used when roots are found to be inside the unit circle, this would indicate a non-stationary model.
+
+Burg and Yule-Walker methods will always produce a stationary model.    
+
+### 9.6.3
+
+Which of the following statements is `FALSE`?
+
+_Burg estimates may find a nonstationary model (produce roots inside the unit circle)._
+
+## 9.7 Estimation: Noise Variance
+
+```{r 9.7.1}
+
+# Generate Data from an AR(2):  (1 - .3B + .7B^2)(X_t - 37) = a_t  ; sigma_2 = 4
+
+x = gen.arma.wge(n = 100, phi = c(2.195, -1.994, .696), vara = 1, sn = 53, plot = TRUE)
+plotts.wge(x)
+
+x.mle = est.ar.wge(x, p=3, type = "mle")
+x.mle$avar
+
+mean(x.mle$res^2)
+
+
+```
+
+## 9.8 Model Identification: Introduction
+
+Lesson:  Always plot the data.
+
+- Check for white noise in the time series plot and via the ACF.
+
+### 9.8.3
+
+
+```{r 9.8.3}
+
+df_white_noise = read.csv("./maybewhitenoise1.csv")
+# head(df_white_noise)
+plotts.wge(df_white_noise$x)
+acf(df_white_noise$x)
+
+```
+### 9.8.4
+```{r 9.8.4}
+
+df_white_noise = read.csv("./maybewhitenoise2.csv")
+# head(df_white_noise)
+plotts.wge(df_white_noise$x)
+acf(df_white_noise$x)
+
+```
+
+## 9.9 Model Identification: AIC Type, Part I
+
+
+
