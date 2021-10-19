@@ -476,4 +476,135 @@ mean(x)
 
 tswge and AIC5/ Top 5 Models
 
+```{r 9.10.4.1}
 
+x31 = gen.arma.wge(n = 75, phi = c(2.3, -1.92, .56), theta = -.8, sn=61, plot = FALSE)
+x31 = x31 + 30
+plotts.sample.wge(x31)
+
+aic5.wge(x31, p=0:8, q=0:2)
+# picks ARMA(6,1)
+est.arma.wge(x31, p=6, q=1)
+
+```
+
+```{r 9.10.4.2}
+# type BIC
+aic5.wge(x31, p=0:8, q=0:2, type="bic")
+# BIC picks ARMA(3,1)
+est.arma.wge(x31, p=3, q=1)
+mean(x31)
+# mean is 25.73985
+```
+### 9.10.5
+
+Because the AIC favored the AR(4,1) and the BIC favored the AR(2,1), which one should we pick?
+
+_We should look at the ACF and spectral density to gather more information about the characteristics and features of the data. In addition we should look at the factor table for each model to help match the model with those characteristics. We will also need to use our intuition and any domain knowledge we may have to choose a model that makes the most sense and will be the most useful (because both of them are likely not the “correct” model)._
+
+
+```{r 9.10.5}
+
+df_inflation = read.csv("./inflation.csv")
+# type AIC
+aic5.wge(df_inflation$Inflation, p=0:8, q=0:2, type="aic")
+# AIC picks ARMA(4,1)
+# est.arma.wge(df_inflation$Inflation, p=4, q=1)
+# mean(df_inflation$Inflation)
+# mean is 25.73985
+
+
+aic5.wge(df_inflation$Inflation, p=0:8, q=0:2, type="bic")
+```
+
+
+## 9.11 Model Identification: Box–Jenkins, Part I
+
+### 9.11.4  
+
+Box-Jenkins Model Identification for MA(q) and AR(p) models
+
+MA(q) - look at the sample auto-correlation plot (ACF)
+
+p_k = 0; for k > q
+
+AR(p) - look at the sample partial auto-correlation plot (PACF)
+
+phi_kk = 0; for k > p
+
+
+## 9.12 Model Identification: Box–Jenkins, Part II
+
+```{r 9.12.2}
+
+df_arnawgatpq1 = read.csv("./armawhatpq1.csv")
+
+acf(df_arnawgatpq1$x)
+
+pacf(df_arnawgatpq1$x)
+
+```
+
+```{r 9.12.3}
+
+# type AIC
+aic5.wge(df_arnawgatpq1$x, p=0:8, q=0:2, type="aic")
+# AIC picks ARMA(2,2)
+
+# type BIC
+aic5.wge(df_arnawgatpq1$x, p=0:8, q=0:2, type="bic")
+# BIC picks ARMA(2,2)
+```
+
+```{r 9.12.4}
+
+acf(df_inflation$Inflation)
+
+pacf(df_inflation$Inflation)
+
+```
+
+## 9.13 Putting It All Together: Model ID, Estimation, Forecasting
+
+
+
+```{r 9.13.4}
+
+
+df_texasgasprice = read.csv("./texasgasprice.csv")
+
+# head(df_texasgasprice)
+
+plotts.sample.wge(df_texasgasprice$Price)
+
+aic5.wge(df_texasgasprice$Price, type = "aic")
+# picks AR(2)
+
+aic5.wge(df_texasgasprice$Price, type = "bic")
+# picks AR(2)
+
+```
+
+
+
+```{r 9.13.4.1}
+
+est = est.ar.wge(df_texasgasprice$Price, p=2, type = "mle")
+est
+
+```
+
+```{r 9.13.4.2}
+
+tx_gas_forecast = fore.arma.wge(df_texasgasprice$Price, phi = est$phi, n.ahead = 8, plot = TRUE)
+
+```
+
+```{r 9.13.4.3}
+
+tx_gas_forecast$f
+
+# 2.087504 (1)
+# 2.094299 (8)
+
+```
