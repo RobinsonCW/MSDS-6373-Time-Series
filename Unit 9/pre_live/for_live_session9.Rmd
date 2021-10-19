@@ -1,6 +1,8 @@
 ---
 title: "Unit 9 - Model Identification for Stationary Models"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
 ---
 
 # For Live Session
@@ -9,6 +11,7 @@ output: html_notebook
 
 library(tidyverse)
 library(tswge)
+library(kableExtra)
 
 ```
 
@@ -38,6 +41,95 @@ Using at least one slide per question
 - Find the ASE for the Burg fit by forecasting the last 24 weeks of the series.
 - Which model would you choose?
 
+
+```{r question-one-a}
+
+df_texasgasprice = read.csv("./texasgasprice.csv")
+# head(df_texasgasprice)
+
+# plotts.sample.wge(df_texasgasprice$Price)
+
+# aic5.wge(df_texasgasprice$Price, type = "aic")
+# picks AR(2)
+
+# aic5.wge(df_texasgasprice$Price, type = "bic")
+# picks AR(2)
+
+est.mle = est.ar.wge(df_texasgasprice$Price, p=2, type = "mle")
+est.mle
+
+
+```
+
+```{r question-one-b}
+kable(head(df_texasgasprice)) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+```
+
+
+```{r question-one-c}
+
+est.mle$phi
+est.mle$avar
+mean(df_texasgasprice$Price)
+
+```
+
+
+$$\begin{equation}
+   (1 - 1.38B + -0.41B^2)(X_t - 2.19) = a_t ;  \sigma^2_a = 0.00
+\end{equation}$$
+
+
+```{r question-two-a}
+
+
+# Burg Estimates
+est.burg = est.ar.wge(df_texasgasprice$Price, p=2, type="burg")
+est.burg
+
+```
+
+```{r question-two-b}
+
+
+# Burg Estimates
+est.burg$phi
+est.burg$avar
+
+
+```
+
+
+$$\begin{equation}
+   (1 - 1.38B + -0.41B^2)(X_t - 2.19) = a_t ;  \sigma^2_a = 0.00
+\end{equation}$$
+
+
+```{r question-two-c}
+
+plotts.sample.wge(df_texasgasprice$Price)
+
+```
+
+
+```{r question-three}
+
+tx_gas_mle_forecast_ar2 = fore.arma.wge(df_texasgasprice$Price, phi = est.mle$phi, n.ahead = 24, lastn = TRUE, limits = FALSE)
+
+mle_ase = mean((df_texasgasprice$Price[(205 - 24 + 1): 205] - tx_gas_mle_forecast_ar2$f)^2)
+mle_ase
+
+```
+
+```{r question-four}
+
+tx_gas_burg_forecast_ar2 = fore.arma.wge(df_texasgasprice$Price, phi = est.burg$phi, n.ahead = 24, lastn = TRUE, limits = FALSE)
+
+mle_ase = mean((df_texasgasprice$Price[(205 - 24 + 1): 205] - tx_gas_burg_forecast_ar2$f)^2)
+mle_ase
+
+```
 
 
 # Asynchronous Material
