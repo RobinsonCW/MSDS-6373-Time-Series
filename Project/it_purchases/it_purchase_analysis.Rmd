@@ -1,0 +1,206 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+
+
+```{r}
+# Date Manipulation
+library(lubridate)
+
+# Metrics
+library(MLmetrics)
+
+# Time Series Analysis
+library(tseries)
+library(forecast)
+library(TSstudio)
+
+
+library(tidyverse)
+library(tswge)
+
+```
+
+
+
+
+```{r purchases-1}
+
+df_optiplex <- read.csv(file="./data/sc_req_item.csv", header = TRUE)
+
+# df_optiplex$opened_at = as.POSIXct(strptime(df_optiplex$opened_at, "%Y-%m-%d %H:%M:%SS"))
+
+df_optiplex <- df_optiplex %>%
+    filter(cat_item == "Dell Optiplex 7000 Series")
+
+
+df_optiplex$opened = floor_date(mdy_hm(df_optiplex$opened_at), "day")
+
+df_optiplex <- df_optiplex %>%
+  mutate(year = as.factor(format(opened, format = "%Y")), 
+         month = as.factor(format(opened, format = "%m")))
+
+
+# df_train <- df_train %>%
+#   mutate(year = as.factor(format(datetime, format = "%Y")), 
+#          month = as.numeric(format(datetime, format = "%m")), 
+#          day = as.factor(format(datetime, format = "%d")),
+#          hour = as.factor(format(datetime, format = "%H")))
+
+
+```
+
+
+```{r}
+df_optiplex <- df_optiplex %>%
+  filter(quantity <= 2) %>%
+  filter(opened < "2021-04-01")
+  # filter(opened <= "2021-09-17") 
+
+  
+```
+
+
+
+
+```{r purchases-2}
+# ggplot(data=df_optiplex, aes(x = opened, y = quantity)) +
+#       geom_line() +
+#       ggtitle("Monthly Optiplex Purchases") +
+#       labs(x = "Curve Day", y = "Number of Cases")
+
+# https://stackoverflow.com/questions/33221425/how-do-i-group-my-date-variable-into-month-year-in-r/33221885
+
+df_optiplex_by_month <- df_optiplex %>% 
+    group_by(month = lubridate::floor_date(opened, "month")) %>%
+    summarize(summary_variable = sum(quantity))
+
+```
+
+
+
+```{r purchases-3}
+
+ggplot(data=df_optiplex_by_month, aes(x = month, y = summary_variable)) +
+      geom_line() +
+      ggtitle("Monthly Optiplex Purchases") +
+      labs(x = "Month", y = "Quantity Purchased")
+
+```
+
+```{r}
+df_optiplex_by_week <- df_optiplex %>% 
+    group_by(week = lubridate::floor_date(opened, "week")) %>%
+    summarize(summary_variable = sum(quantity))
+```
+
+
+```{r purchases-3}
+
+ggplot(data=df_optiplex_by_week, aes(x = week, y = summary_variable)) +
+      geom_line() +
+      ggtitle("Weekly Optiplex Purchases") +
+      labs(x = "Week", y = "Quantity Purchased")
+
+```
+
+
+```{r purchases-3}
+
+ggplot(data=df_optiplex_by_month, aes(x = month, y = summary_variable)) +
+      geom_line() +
+      ggtitle("Monthly Optiplex Purchases") +
+      # scale_x_date(breaks = "1 month", labels=date_format("%b")) +
+      labs(x = "Month", y = "Quantity Purchased")
+
+```
+
+
+
+```{r purchases-4}
+
+arima1 <- arima(df_optiplex_by_week$summary_variable, order=c(5, 0, 0), seasonal = c(12, 0, 0))
+
+```
+
+
+```{r purchases-5}
+forcast1 <- forecast(arima1, h=12)
+```
+
+
+```{r purchases-6}
+plot(forcast1)
+legend(x = "topleft", legend = c("Predicted"), col = c("blue"), lty = c(1, 1))
+```
+
+
+
+```{r}
+df_optiplex %>%
+  ggplot(aes(quantity)) +
+  geom_histogram(bins = 200) +
+  ggtitle("Histogram of Optiplex Purchases by Quantity") +
+  labs(x = "Quantity", y = "Count") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+```{r}
+
+df_optiplex %>%
+  filter(quantity > 1) %>%
+  arrange(desc(quantity))
+
+
+```
+
+
+```{r}
+# plotts.sample.wge(df_optiplex_by_week$summary_variable)
+
+plotts.sample.wge(df_optiplex$quantity)
+```
+
+```{r}
+# d1 = artrans.wge(df_optiplex_by_week$summary_variable, phi.tr = 1)
+
+d1 = artrans.wge(df_optiplex$quantity, phi.tr = 1)
+
+
+
+# d2 = artrans.wge(d1, phi.tr = 1)
+
+```
+
+
+
+```{r}
+aic5.wge(df_optiplex$quantity,  p = 0:15, q = 0:2)
+# aic5.wge(d2,  p = 0:5, q = 0:2)
+```
+
+
+
+
+```{r}
+# We use this strategy to generate the AR(2) model with mean 50.
+e = est.arma.wge(df_optiplex$quantity, p=4, q=2)
+mean(df_optiplex$quantity)
+
+# e = e + mean(df_optiplex_by_week$summary_variable)
+```
+
+```{r}
+plotts.parzen.wge(df_optiplex$quantity)
+```
+
+
+
+```{r}
+fore.aruma.wge(df_optiplex$quantity, phi = e$phi, theta = e$theta,  n.ahead = 30, limits = FALSE, lastn=TRUE) 
+# fore.aruma.wge(d1, phi = e$phi, d = 1, n.ahead = 4, limits = FALSE, lastn=TRUE) 
+```
+
