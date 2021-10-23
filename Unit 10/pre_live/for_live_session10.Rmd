@@ -1,0 +1,246 @@
+---
+title: "Unit 10 | Model Identification for Nonstationary Models"
+output:
+  html_document:
+    df_print: paged
+---
+
+# For Live Session
+
+```{r library-imports}
+
+library(tidyverse)
+library(tswge)
+library(kableExtra)
+
+```
+
+
+
+## Question 1 
+
+In preparation for the live session, please complete the following and submit your PowerPoint via the online campus. Be sure and submit your work to the "Unit 10: "For Live Session" Assignment" assignment on 2DS:
+
+Select a data set, and complete one of each model ID below:
+
+ARIMA
+Seasonal
+Signal Plus Noise with Cochrane–Orcutt
+Take your time series, and analyze it with these methods
+Provide a slide or slides for your Key Takeaways for Unit 10!
+
+Provide a slide or slides for any questions or comments you have from this section. This could also include topics you would like to have specifically addressed in live session! There is no minimum or maximum here.
+
+
+
+
+```{r question-one-b}
+
+# kable(head(df_texasgasprice)) %>%
+#   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+
+
+```
+
+
+
+# Asynchronous Material
+
+## 10.1 Introduction
+
+## 10.2 ARIMA: Model ID Setting
+
+
+### 10.2.1 ARIMA Model | Model ID
+
+- wehre phi(B) and theta(B) are the pth and qth order operators, respectively
+
+Properties of ARIMA Models
+
+Recall:
+
+- The (1-B)^d factor dominates the stationary components
+  - In the realizations
+  - Autocorrelations
+  - Sepctral densities all have peaks at f = 0
+
+- For d > 1 this domination is even more striking
+  - __Slowly damping sample autocorrelations is an indication of an ARIMA model__
+
+$$\begin{equation}
+   \phi(B)(1-B)^d(X_t - \mu) = \theta(B)a_t
+\end{equation}$$
+
+
+### 10.2.2  ARIMA | Dow Jones Example Part 1
+
+Selects an AR(1) model
+
+
+Question:  Should we use this (stationary) model or a model that includes a (1-B) factor?
+
+- phi_1 is very close to 1
+
+- Do you expect the DOWN Jones average to eventually pull back to a mean values like 16,778?
+ - Historically, the answer to this last question is _No_.
+ 
+ 
+A non-stationary model is suggested.
+
+
+```{r 10.2.2}
+
+data("dowjones2014")
+aic.wge(dowjones2014, p=0:5, q=0:2)
+
+```
+
+### 10.2.3 Concept Check
+
+
+True or false? Assume we use est.arma.wge to fit an ARMA(2,1) model with maximum likelihood coefficients. Assume also that we used factor.wge to look at the roots of the AR and MA factors and found that all roots were outside the unit circle. We therefore know that this data must have come from a stationary process.
+
+
+(False) All models are wrong, but some are useful. The data could very well have come from a nonstationary process. We must use our intuition, domain knowledge, and others expert opinions along with the statistics to make the best decisions about the model.
+
+
+## 10.3 ARIMA: Box–Jenkins Model ID Procedure, Part I
+
+
+### 10.3.1 ARIMA Box-Jenkins Model ID Procedure
+
+
+Steps for Obtaining an ARIMA(p,d,q) Model
+
+1.  Difference the data (possibly multiple times) until the data appear stationary
+
+2.  Estimate the parameters of the "stationarized data"
+
+### 10.3.2 Model with a Unit Root
+
+```{r 10.3.2}
+
+### Difference the data to model it as a non-stationary model ###
+
+# generate ARIMA(2,1,0)
+x = gen.arima.wge(n = 200, phi = c(1.2, -.8), d=1, sn = 56)
+
+plotts.sample.wge(x)
+
+xd1.dif = artrans.wge(x, phi.tr = 1)
+
+aic5.wge(xd1.dif, p = 0:5, q = 0:2)
+
+est = est.ar.wge(xd1.dif, p=2)
+
+est$avar
+
+mean(x)
+
+
+```
+
+```{r 10.3.3}
+
+df_bond = read.csv("./data/10_year_bond_rate_2010-2015.csv")
+
+plotts.sample.wge(df_bond$Close)
+
+
+```
+```{r 10.3.4}
+
+bd1 = artrans.wge(df_bond$Close, phi.tr = 1)
+
+plotts.sample.wge(bd1)
+
+```
+
+```{r 10.3.4}
+
+aic5.wge(bd1)
+
+```
+
+```{r 10.3.4}
+
+aic5.wge(df_bond$Close)
+
+```
+
+
+
+## 10.4 ARIMA: Box–Jenkins Model ID Procedure, Part II
+
+(1 - B)^2(1-1.2B + .6B^2)X_t = a_t
+
+```{r 10.4.1}
+
+x = gen.arima.wge(n = 200, d=2, phi=c(1.2, -.6), sn=132, vara=1)
+
+x.d1 = artrans.wge(x, phi.tr = 1)
+
+x.d2 = artrans.wge(x.d1, phi.tr = 1)
+
+aic5.wge(x.d2)
+
+```
+
+### 10.4.2 Concept Check
+
+
+If you difference the data and the differenced data still appear to be wandering and the ACF is still slowly damping with significant positive autocorrelations, you can simply difference the data again (difference the already differenced data).
+
+
+_True_
+
+### 10.4.3Concept Check
+
+True or false? Differencing the data twice is equivalent to adding two (1-B) terms (factors) to the model.
+
+_True_
+
+
+
+## 10.5 ARIMA: Comments and Forecasts (Review)
+
+
+Comments about ARIMA Models
+
+There is no attraction to a mean in ARIMA modelS.  (non-stationary models)
+
+
+
+### 10.5.2  Forecasting with ARIMA(2,1,0) Model
+
+
+(1-B)(1-1.27B + .8B^2)(X_t + 21.22) = a_t; signma_2 = .93
+
+
+
+```{r 10.5.2}
+
+xd1 = gen.aruma.wge(n =200, phi = c(1.27, -.8), d=1)
+
+fore.aruma.wge(xd1, d=1, phi=c(1.27, -.8), n.ahead = 50, limits =  1FALSE)
+
+```
+
+## 10.6 ARIMA: Dow Jones Example, Part II
+
+```{r 10.6.1}
+
+# dow = data("dowjones2014")
+# difference the data
+
+dow.1 = artrans.wge(dowjones2014, phi.tr = 1)
+
+aic5.wge(dow.1, p=0:5, q=0:2)
+# aic picks ARMA(4,1)
+
+est.arma.wge(dow.1, p=4, q=1)
+
+factor.wge(phi = c(0.9265955, 0.1355600, -0.0240474, -0.1242563))
+```
+
+
