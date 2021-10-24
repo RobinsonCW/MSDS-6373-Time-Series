@@ -12,6 +12,7 @@ output:
 library(tidyverse)
 library(tswge)
 library(kableExtra)
+library(tseries)
 
 ```
 
@@ -222,7 +223,7 @@ There is no attraction to a mean in ARIMA modelS.  (non-stationary models)
 
 xd1 = gen.aruma.wge(n =200, phi = c(1.27, -.8), d=1)
 
-fore.aruma.wge(xd1, d=1, phi=c(1.27, -.8), n.ahead = 50, limits =  1FALSE)
+fore.aruma.wge(xd1, d=1, phi=c(1.27, -.8), n.ahead = 50, limits =  FALSE)
 
 ```
 
@@ -241,6 +242,104 @@ aic5.wge(dow.1, p=0:5, q=0:2)
 est.arma.wge(dow.1, p=4, q=1)
 
 factor.wge(phi = c(0.9265955, 0.1355600, -0.0240474, -0.1242563))
+```
+
+## 10.7 ARIMA: A More General Model ID Method—Overfit Tables
+
+### 10.7.1 A More General Approach for Detecting Non-Stationarities
+
+
+### 10.7.2 Tiao/ Tsay and Overfit Tables
+
+
+Even though the data are not from an AR(6) or AR(8), the 1-B shows up in both factor tables
+
+
+```{r 10.7.2}
+
+# generate ARIMA(2,1,0) data as before
+xd1 = gen.arima.wge(n = 200, phi = c(1.2, -.8), d=1, sn = 56)
+
+# fit an AR(6) and AR(8) to this realization
+
+est.ar.wge(xd1, p=6, type="burg")
+
+est.ar.wge(xd1, p=8, type = "burg")
+
+
+
+```
+### 10.7.3 10-Year Bond Rate
+
+
+```{r}
+
+est.ar.wge(df_bond$Close, p=6, type="burg")
+
+```
+
+
+### 10.7.4 Two Unit Roots
+
+- Has roots very close to the unit circle (the Abs recip)
+- Has System Frequency f_0 ~ 0.00
+- 1 -2B + B^2 = (1 - B)^2
+
+```{r 10.7.4}
+
+x = gen.arima.wge(n = 200, d=2, phi=c(1.2, -.7), sn=132)
+
+# fit an AR(8) and AR(10) to this realization
+
+est.ar.wge(x, p=8, type="burg")
+
+```
+
+
+
+### 10.7.5  Zero, One or Two Roots
+
+
+```{r 10.7.5}
+
+df_roots = read.csv("./data/zero_one_or_tworootsofone.csv")
+
+# plotts.sample.wge(df_roots$x)
+
+est.ar.wge(df_roots$x, p=8)
+
+
+```
+
+## 10.8 ARIMA: Testing for Unit Roots
+
+### 10.8.1 Dicky-Fuller Test
+
+
+- Popular in Economics
+- Helps you to decide whether or not to include one or more (1-B) factors in your model
+
+- They involve a test of the hypothesis
+
+H_0 = model has a root of +1
+H_A = the model does not have a root of +1
+
+```{r 10.8.2}
+
+x = gen.arma.wge(200,phi = c(.9), sn = 5)
+
+adf.test(x)
+
+```
+
+```{r 10.8.4}
+
+x = gen.arma.wge(200,phi = c(.99), plot = FALSE)
+
+adf.test(x)
+
+a = c(0.02977, 0.157, 0.2907, 0.4233, 0.03683, 0.02514,  0.01579, 0.04436,  0.2606, 0.1232)
+
 ```
 
 
