@@ -54,32 +54,51 @@ df_optiplex <- df_optiplex %>%
 ```
 
 
+
+```{r}
+
+# https://stackoverflow.com/questions/33221425/how-do-i-group-my-date-variable-into-month-year-in-r/33221885
+
+df_optiplex_by_quarter <- df_optiplex %>% 
+    group_by(month = lubridate::floor_date(opened, "quarter")) %>%
+    summarize(summary_variable = sum(quantity))
+
+```
+
+```{r}
+df_optiplex_by_month <- df_optiplex %>% 
+    group_by(month = lubridate::floor_date(opened, "month")) %>%
+    summarize(summary_variable = sum(quantity))
+```
+
+```{r}
+df_optiplex_by_week0 <- df_optiplex %>% 
+    group_by(week = lubridate::floor_date(opened, "week")) %>%
+    summarize(summary_variable = sum(quantity))
+```
+
+
+
 ```{r}
 df_optiplex <- df_optiplex %>%
-  filter(quantity <= 2) %>%
-  filter(opened < "2021-04-01")
-  # filter(opened <= "2021-09-17") 
+  filter(quantity < 10) %>%
+  filter(opened >= "2020-07-05")  %>%
+  filter(opened <= "2021-07-04")
+  
 
   
 ```
 
 
 
+```{r purchases-3}
 
-```{r purchases-2}
-# ggplot(data=df_optiplex, aes(x = opened, y = quantity)) +
-#       geom_line() +
-#       ggtitle("Monthly Optiplex Purchases") +
-#       labs(x = "Curve Day", y = "Number of Cases")
-
-# https://stackoverflow.com/questions/33221425/how-do-i-group-my-date-variable-into-month-year-in-r/33221885
-
-df_optiplex_by_month <- df_optiplex %>% 
-    group_by(month = lubridate::floor_date(opened, "month")) %>%
-    summarize(summary_variable = sum(quantity))
+ggplot(data=df_optiplex_by_quarter, aes(x = month, y = summary_variable)) +
+      geom_line() +
+      ggtitle("Quarterly Optiplex Purchases") +
+      labs(x = "Quarter", y = "Quantity Purchased")
 
 ```
-
 
 
 ```{r purchases-3}
@@ -122,7 +141,7 @@ ggplot(data=df_optiplex_by_month, aes(x = month, y = summary_variable)) +
 
 ```{r purchases-4}
 
-arima1 <- arima(df_optiplex_by_week$summary_variable, order=c(5, 0, 0), seasonal = c(12, 0, 0))
+arima1 <- arima(df_optiplex_by_week$summary_variable, order=c(13, 0, 1))
 
 ```
 
@@ -142,43 +161,68 @@ legend(x = "topleft", legend = c("Predicted"), col = c("blue"), lty = c(1, 1))
 ```{r}
 df_optiplex %>%
   ggplot(aes(quantity)) +
-  geom_histogram(bins = 200) +
+  geom_histogram(bins = 25) +
   ggtitle("Histogram of Optiplex Purchases by Quantity") +
   labs(x = "Quantity", y = "Count") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ```
 
 ```{r}
-
 df_optiplex %>%
-  filter(quantity > 1) %>%
-  arrange(desc(quantity))
+  remove_missing(na.rm = TRUE) %>%
+  group_by(quantity) %>%
+  # filter(n() < 10) %>%
+  ggplot(aes(x = quantity, color=quantity)) + 
+  geom_bar() +
+  geom_text(stat='count', aes(label=..count..), vjust=-1) +
+  ggtitle("Optiplex Purchases by Quantity") +
+  labs(x = "Quantity", y = "Count") +
+  theme(plot.title = element_text(hjust = 0.5)) + lims(y=c(0,550)) 
 
-
-```
-
-
-```{r}
-# plotts.sample.wge(df_optiplex_by_week$summary_variable)
-
-plotts.sample.wge(df_optiplex$quantity)
-```
-
-```{r}
-# d1 = artrans.wge(df_optiplex_by_week$summary_variable, phi.tr = 1)
-
-d1 = artrans.wge(df_optiplex$quantity, phi.tr = 1)
-
-
-
-# d2 = artrans.wge(d1, phi.tr = 1)
 
 ```
 
 
 
 ```{r}
-aic5.wge(df_optiplex$quantity,  p = 0:15, q = 0:2)
+factor.wge(phi = c(rep(0,3), 1))
+```
+
+
+```{r}
+
+# df_optiplex %>%
+#   filter(quantity > 1) %>%
+#   arrange(desc(quantity))
+
+
+est.ar.wge(df_optiplex_by_week$summary_variable, p = 8, type = "burg")
+
+
+```
+
+
+```{r}
+plotts.sample.wge(df_optiplex_by_week$summary_variable)
+```
+
+```{r}
+# df_optiplex_by_week$summary_variable <- log(df_optiplex_by_week$summary_variable)
+```
+
+
+```{r}
+
+d1 = artrans.wge(df_optiplex_by_week$summary_variable, phi.tr = 1)
+
+d2 = artrans.wge(d1, phi.tr = 1)
+
+```
+
+
+
+```{r}
+aic5.wge(df_optiplex_by_week$summary_variable,  p = 0:15, q = 0:2, type = "aic")
 # aic5.wge(d2,  p = 0:5, q = 0:2)
 ```
 
@@ -187,20 +231,52 @@ aic5.wge(df_optiplex$quantity,  p = 0:15, q = 0:2)
 
 ```{r}
 # We use this strategy to generate the AR(2) model with mean 50.
-e = est.arma.wge(df_optiplex$quantity, p=4, q=2)
-mean(df_optiplex$quantity)
+# e = est.ar.wge(df_optiplex_by_week$summary_variable, p=5, type = "burg")
+e = est.arma.wge(df_optiplex_by_week$summary_variable, p=13, q=1)
+mean(df_optiplex_by_week$summary_variable)
+
+# e = e + mean(df_optiplex_by_week$summary_variable)
 
 # e = e + mean(df_optiplex_by_week$summary_variable)
 ```
 
 ```{r}
-plotts.parzen.wge(df_optiplex$quantity)
+plotts.parzen.wge(df_optiplex_by_week$summary_variable)
 ```
 
 
 
 ```{r}
-fore.aruma.wge(df_optiplex$quantity, phi = e$phi, theta = e$theta,  n.ahead = 30, limits = FALSE, lastn=TRUE) 
+f = fore.aruma.wge(df_optiplex_by_week$summary_variable, phi = e$phi, theta = e$theta, n.ahead = 12, limits = FALSE, lastn=TRUE) 
 # fore.aruma.wge(d1, phi = e$phi, d = 1, n.ahead = 4, limits = FALSE, lastn=TRUE) 
+```
+
+```{r}
+
+seasonal_ase = mean((df_optiplex_by_week$summary_variable[(52 - 12 + 1): 52] - f$f)^2)
+seasonal_ase
+
+
+```
+
+
+
+```{r}
+
+df_out <- df_optiplex_by_week %>%
+   select(week, summary_variable) %>%
+   filter(week >= "2021-04-04")
+
+
+df_out$predictions = round(f$f)
+
+df_out <- plyr::rename(df_out, replace = c("summary_variable"="actual"))
+
+df_out <- df_out %>%
+  mutate(diff = (actual - predictions)) %>%
+  mutate(abs.diff = abs(actual - predictions))
+
+df_out
+
 ```
 

@@ -13,6 +13,7 @@ library(tidyverse)
 library(tswge)
 library(kableExtra)
 library(tseries)
+library(orcutt)
 
 ```
 
@@ -339,6 +340,265 @@ x = gen.arma.wge(200,phi = c(.99), plot = FALSE)
 adf.test(x)
 
 a = c(0.02977, 0.157, 0.2907, 0.4233, 0.03683, 0.02514,  0.01579, 0.04436,  0.2606, 0.1232)
+
+```
+
+## 10.9 Seasonal Models: Model Identification
+
+### 10.9.4 Southwest Airlines Flight Data
+
+```{r 10.9.4.1}
+
+df_swa = read.csv("./data/swadelay.csv")
+
+head(df_swa)
+
+```
+
+
+
+
+```{r 10.9.4.2}
+
+
+factor.wge(phi = c(rep(0,11), 1))
+
+```
+
+```{r 10.9.4.3}
+
+
+est.ar.wge(df_swa$arr_delay, p = 15, factor = TRUE, type = "burg")
+
+```
+
+
+### 10.10 Seasonal Models: Example—Airline Data
+
+```{r 10.10.1}
+
+x = gen.aruma.wge(n=200, s=12, phi=c(1.5, -.8), sn = 87)
+x = x + 50
+
+fore.aruma.wge(x, s=12, phi=c(1.47, -.76), n.ahead = 36, lastn = TRUE, limits = FALSE)
+
+
+```
+
+### 10.10.2 Log Airline Data
+
+- 1 - 2B + B^2 = (1 - B)^2  which is associated with frequency f_0 = 0
+
+- We encountered a similar situations with an ARIMA model with d = 2.
+
+```{r 10.10.3}
+
+data(airlog)
+
+
+
+# 1-1.9697B+0.9704B^2    1.0149+-0.0218i      0.9851       0.0034
+
+d1 = artrans.wge(airlog, phi.tr = 1)
+
+d1.12 = artrans.wge(d1, phi.tr = c(rep(0,11), 1))
+
+e = est.ar.wge(d1.12, p=12, type = "burg")
+# aic5.wge(d1.12, p=0:13, q=0:3)
+# aic picks an ARMA(12,1)
+
+# aic5.wge(d1.12, p=0:13, q=0:3, type = "bic")
+# bic picks an MA(1)
+
+```
+
+## 10.11 Seasonal Models: Example—Penn Temp Data
+
+
+### 10.11.1
+
+
+__Do Not__ include 1 - B^12, for example, in the model simply because there is a 12th order nonstationarity or because the data show a period of 12.
+
+__Check the factor tables__
+
+```{r 10.11.1}
+
+data(patemp)
+
+plotts.sample.wge(patemp)
+
+est.ar.wge(patemp, p=14, type = "burg")
+
+y.tr = artrans.wge(patemp, phi.tr = c(1.732, -1))
+
+
+aic5.wge(y.tr, p=0:13, q=0:3, type = "bic")
+
+
+est.ar.wge(y.tr, p=3)
+
+mean(patemp)
+
+```
+
+### 10.11.2  Concept Check
+
+True or false? If we have monthly data that, after looking at the spectral density, has a peak at .08 (1/12), we should always include a (1-B12) factor in the model.
+
+__False__
+
+
+### 10.11.3 Concept Check
+
+True or false? If we have monthly data that, after looking at the spectral density, has a peak at .08 (1/12), we should always include a (1-B12) factor in the model.
+
+
+__False__
+
+### 10.11.4
+
+
+True or false? We can fit an AR(2) model that has a frequency at .25 (or .08).
+
+__True__
+
+
+## 10.12 Signal Plus Noise Models: Testing for Trend OLS Method
+
+- Let t = Time be the independent variable
+- Let x = X_t be the dependent variable
+- Consider the standard regression model
+ - X_t = a + bt + Z_t
+- Conclude there is a trend if H_0:b = 0 is rejected
+
+The R program _lm_ can be used fore regression
+
+- re = lm(formula = x~t)
+- summary(le)
+
+X_t = -2.082 + .073t + Zt
+
+
+and H_0: b = 0 is rejected with p<.001. 
+
+_unlikely to happen by chance if the null hypothesis were true_
+
+
+### 10.12.2
+
+When we have tests with inflated "observed significance rates"
+   - Then if you find a significant deterministic trend, you don't have "confidence" that the trend is actually deterministic
+
+__Type 1 Error:  We rejected when Ho: β_1=0 was true.__
+
+
+```{r 10.12.2}
+
+
+x =  gen.sigplusnoise.wge(100, b0 = 0, b1= 0, phi= .95, sn = 28, plot = FALSE)
+
+t = seq(1,100,1)
+
+df = data.frame(x = x, t = t)
+
+fit = lm(x~t, data = df)
+
+summary(fit)
+
+
+
+```
+
+```{r 10.12.5}
+
+x = gen.sigplusnoise.wge(100, b0 = 0, b1= 0, phi= .95)  #note that there is not a seed this time. We will generate a different realization each time.
+t = seq(1,100,1)
+df = data.frame(x = x, t= t)
+fit = lm(x~t, data = df)
+summary(fit) # record whether it rejected or failed to reject. 
+```
+
+## 10.13 Signal Plus Noise Models: Testing for Trend—Cochrane-Orcutt
+
+X_t = a + bt + _Z_t_, (1 - phi_1B)Z_t = a_t
+
+- Steps
+
+  1. Fit a linear regression to X_t getting estimates for a(hat), b(hat)
+  
+  2. Calculate Z(hat)_t = X_t - a(hat) - b(hat)_t
+  Z(hat)_t should be approximately AR(1)
+  
+  3. Fit an AR(1) to Z(hat)_t, get estimate of phi(hat)_1
+  
+  4. Calculate y(hat)_t = (1 - phi(hat)B)X_t, t = 2,...,n
+  
+  
+
+
+To Test H_0: b = 0 in this new model using standard techniques is called the Cochrane-Orcutt test
+
+Type 1 error rate:  Probability of rejecting the null hypothesis when it is true
+
+We typically run hypothesis tests controlling the Type Error Rate to be small (commonly alpha = 0.05)
+
+There is a trade-off between error and power.
+
+
+
+
+### 10.13.2 Cochrane-Orcutt in R
+
+```{r 10.13.2.1}
+
+# b1 = slope
+
+x = gen.sigplusnoise.wge(100, b0 = 0, b1 = 0, phi = .95, sn = 21, plot = FALSE)
+
+t = seq(1,100,1)
+df = data.frame(x = x, t= t)
+fit = lm(x~t, data = df)
+summary(fit) # record whether it rejected or failed to reject. 
+
+
+# __Type 1 Error:  We rejected when Ho: β_1=0 was true.__
+
+```
+
+
+
+
+```{r 10.13.2.2}
+
+
+cfit = cochrane.orcutt(fit)
+summary(cfit)
+
+# Fail to reject the null hypothesis at a p-value of .3129 (Correct)
+
+
+```
+
+### 10.13.3
+
+
+```{r 10.13.3}
+
+
+# head(df_swa)
+
+t = seq(1,177,1)
+df = data.frame(x = df_swa$arr_delay, t= t)
+fit = lm(x~t, data = df)
+summary(fit) # record whether it rejected or failed to reject. 
+
+```
+
+```{r}
+
+cfit = cochrane.orcutt(fit)
+summary(cfit)
 
 ```
 
