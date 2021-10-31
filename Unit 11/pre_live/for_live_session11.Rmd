@@ -1,0 +1,813 @@
+---
+title: "Unit 11 | Model Building"
+output: html_notebook
+---
+
+```{r library-imports}
+
+library(tidyverse)
+library(tswge)
+library(kableExtra)
+library(tseries)
+library(orcutt)
+
+```
+
+
+# For Live Session
+
+## Activity 1
+
+Please address each activity on at least one PowerPoint slide and submit via the online campus.
+
+Our purpose is to update the Sunspot analysis. Go to this website.
+
+Download the most current yearly mean sunspot data and with this data:
+
+### 1. Plot the data.
+
+```{r activity-1.1}
+
+sunspot = read.csv("./data/SN_y_tot_V2.0.csv", sep=";", header=F)
+
+plotts.sample.wge(sunspot$V2)
+
+```
+
+
+### 2. Stationarity
+
+Comment on its stationarity.
+
+- Observations from 1749 - 2021.
+
+- Sample Autocorrelations
+  - Slowly damping sinusoidal ACF.
+
+- Spectral Density
+  - Peak of around .1, with approximately a 10 year cycle.
+
+### 3.  AIC5
+
+Use aic5.wge to estimate the p and q of the model. You may use your choice of AIC/AICC/BIC.
+
+Both AIC and BIC chose an AR(9) model
+
+
+```{r activity-1.3}
+
+
+aic5.wge(sunspot$V2, p=0:13, q=0:3, type = "bic")
+
+```
+
+
+### 4. Model Fit
+
+Fit the model using your model identification (p and q). You may use any of the estimates you like (maximum likelihood, Yule–Walker, Burg).
+
+```{r activity-1.4}
+
+sunspot.ar9 = est.ar.wge(sunspot$V2, p=9, type = "burg")
+
+
+sunspot.ar9$phi
+sunspot.ar9$avar
+
+mean(sunspot$V2)
+
+```
+
+$$\begin{equation}
+   (1-1.16B+0.41B^2+0.13B^3-0.11B^4+0.07B^5-0.01B^6-0.02B^7+0.05B^8-0.22B^9)(X_t - 78.52) = a_t; \sigma^2 = 544.32
+\end{equation}$$
+
+
+
+### 5. ASE
+
+Use this model to generate an ASE from forecasting the last 15 years of sunspot data. (You will use this to compare your models to your peer’s models.)
+
+
+The ASE for the AR(9) model was *3328*.
+
+
+```{r activity-1.5}
+
+sunspot.ar9.forecast = fore.arma.wge(sunspot$V2, phi = sunspot.ar9$phi, n.ahead = 15, lastn = TRUE, limits = FALSE)
+
+
+ase = mean((sunspot$V2[(321 - 15 + 1): 321] - sunspot.ar9.forecast$f)^2)
+ase
+
+```
+
+
+### 6. Seasonal Fit
+
+Now fit a seasonal model to the Sunspot data (you pick the value of s), and find the ASE for this model using the last 15 years of sunspot data. 
+
+Factor 11 Table
+
+321 / 29
+[1] 11.06897
+
+```{r activity-1.6.1}
+
+factor.wge(c(rep(0,10), 1))
+
+```
+
+
+```{r activity-1.6.2}
+
+est.ar.wge(sunspot$V2, p=14, type="burg")
+
+```
+
+
+```{r activity-1.6.3}
+
+y.tr = artrans.wge(sunspot$V2, phi.tr = c(rep(0,10),1))
+
+aic5.wge(y.tr, p=0:16, q=0:3, type="bic")
+
+sunspot.s11.seasonal = est.ar.wge(y.tr, p=13, type = "burg")
+
+
+
+```
+
+
+### 7. Preference
+
+Describe which model you prefer, and why.
+
+I would choose the Seasonal AR(13) over the more basic AR(11) model based on the ASE score.
+
+The ASE for the AR(13) model with s=11 was *2502*.
+
+```{r activity-1.7}
+
+sunspot.s11.ar13.forecast = fore.aruma.wge(sunspot$V2, s = 11, phi = sunspot.s11.seasonal$phi, n.ahead = 15, lastn = TRUE, limits = FALSE)
+
+
+sunspot.s11.ar13.ase = mean((sunspot$V2[(321 - 15 + 1): 321] - sunspot.s11.ar13.forecast$f)^2)
+sunspot.s11.ar13.ase
+```
+
+
+### 8. Best Model
+
+Use your best model (the one you choose) to forecast the next 10 years of sunspot data.
+
+```{r activity-1.8}
+
+sunspot.s11.ar13.forecast = fore.aruma.wge(sunspot$V2, s = 11, phi = sunspot.s11.seasonal$phi, n.ahead = 10, lastn = FALSE, limits = FALSE)
+
+
+```
+
+## Activity 2
+
+Given what you have learned so far, model the Accuspike web page hits data, and provide the desired forecasts.  
+
+This does not need to be a formal analysis with a write-up.  
+
+You should be able to explore the data, identify a model, estimate the model, judge the appropriateness of the model, and provide the forecasts in five or fewer slides.
+
+
+### 1. Plot the data.
+
+```{r activity-2.1}
+
+accuspike = read.csv("../Accuspike.csv")
+
+plotts.sample.wge(accuspike$Active.Users)
+
+```
+
+### 2. Stationarity
+
+Comment on its stationarity.
+
+- Observations from 6/1/18 - 12/9/18
+
+- Sample Autocorrelations
+  - Slowly damping sinusoidal ACF.
+
+- Spectral Density
+  - Peak of around .18, with approximately a 7 day cycle.
+  
+- Clear change in behavior for the month of December, likely a violation of condition 3.
+
+### 3.  AIC5
+
+Use aic5.wge to estimate the p and q of the model. You may use your choice of AIC/AICC/BIC.
+
+Both AIC and BIC chose an AR(9) model
+
+
+```{r activity-2.3}
+
+
+aic5.wge(accuspike$Active.Users, p=0:13, q=0:3, type = "bic")
+
+```
+
+### 4. Model Fit
+
+Fit the model using your model identification (p and q). You may use any of the estimates you like (maximum likelihood, Yule–Walker, Burg).
+
+```{r activity-2.4}
+
+accuspike.ar9 = est.ar.wge(accuspike$Active.Users, p=9, type = "burg")
+
+accuspike.ar9$phi
+accuspike.ar9$avar
+
+mean(accuspike$Active.Users)
+
+```
+
+### 5. ASE
+
+Use this model to generate an ASE from forecasting the last 10 days of accuspike website data. 
+
+The ASE for the AR(9) model was *3328*.
+
+
+```{r activity-2.5}
+
+accuspike.ar9.forecast = fore.arma.wge(accuspike$Active.Users, phi = accuspike.ar9$phi, n.ahead = 10, lastn = TRUE, limits = FALSE)
+
+ase = mean((accuspike$Active.Users[(192 - 15 + 1): 192] - accuspike.ar9.forecast$f)^2)
+ase
+
+```
+
+
+# Asynchronous Material
+
+## 11.1 Introduction
+
+### 11.1.2 Model Appropriateness
+
+  - whether or not the basic assumptions are met
+  - ramifications of selecting certain models
+  - forecasting performance
+  
+  
+## 11.2 White Noise and Whitening the Residuals
+
+### 11.2.1 White Noise Review
+
+ - Does the model "whiten" the residuals
+ - *$avar* is a "residual" variance and does not measure whether or not the residuals are *white noise*.
+ - if the residuals are not white noise, this suggests that further modeling may be necessary to better explain the behavior in the data.
+ - the residuals are calculated within the functions *est.ar.wge* and *est.arma.wge* and found in the output variable *$res*
+
+
+### 11.2.2 Comments on Calculating the Residuals
+
+  - Conditional Residuals - n-p instead of n
+  - *backcasting* can be used to get estimation for all n residuals aby looking at the series in the reverse order
+  
+
+### 11.2.3 Testing Residuals for White Noise
+
+
+  - Check 1
+    - Visually inspect plots of the residuals
+    - The residuals should look like white noise (random)
+    - About 95% of the same autocorrelations of the residuals should stay within the limit lines.
+    
+  
+### 11.2.4 Ljung-Box
+
+  - Check 2 Ljung-Box test
+  
+  H_0 = p1 = p2 = ... pk = 0
+  
+  H_A - at least one pk <> =, for 1 <= k <= K
+  
+  
+  Tests the autocorrelations *as a group*
+  
+  
+  Under H_0, L is approximately chi^2 with K - p - q d.f.  (degrees of freedom)
+  Reject H_0 if L > chi^2_1 - alpha(K - p - q)
+  
+  It is advised to check for more than one value of K.  
+  
+  Box and Jenkins use K = 24 and 48
+  
+  tswge function *ljung.wge*
+  
+  ljung.wge(res, p, q, K)
+  # res residual file after ARMA(p, q) fit to data
+  # K is capital K above (default = 24)
+  
+
+
+### 11.2.5 Example 1 ARMA(2,1)
+
+
+```{r 11.2.5.1}
+
+# (1 - 1.6B + .9B^2)(X_t - 10) = (1 - .8B)a_t
+
+x = gen.arma.wge(n=100, phi=c(1.6, -.9), theta = .8, sn= 67, plot = FALSE)
+x = x+10
+plotts.sample.wge(x)
+
+aic.wge(x, p=0:8, q=0:4)
+# AIC picks ARMA(2,1)
+x21 = est.arma.wge(x, p=2, q=1)
+x21$phi # 1.6195  -0.9132 
+x21$theta # 0.868127
+x21$avar # 1.076196
+mean(x) # 10.07557
+
+```
+#### Final Model
+
+$$\begin{equation}
+   (1-1.62B+.91B^2)(X_t - 10.08) = (1 - .87B)a_t; \sigma^2 = 1.08
+\end{equation}$$
+
+
+
+#### Check 1 (Visual Test)
+
+The residuals look "white"
+
+```{r 11.2.5.2}
+
+# The residuals look "white"
+
+plotts.sample.wge(x21$res)
+
+```
+
+
+#### Check 2 (Ljung-Box test)
+
+For both K=24 and 48 we fail to reject white noise.
+
+
+*Based on Checks 1 and 2 the residuals from the fitted ARMA(2,1) model seem to be white.*
+
+
+```{r 11.2.5.3}
+
+ljung.wge(x21$res, p=2, q=1, K=48)
+
+
+
+```
+  
+  
+### 11.2.6 Example 2 Seasonal (1-B^12)
+
+$$\begin{equation}
+   (1-B^{12})(1 - 1.5B + .8B^2)(X_t - 50) = a_t
+\end{equation}$$
+
+
+
+```{r 11.2.6.1}
+
+x = gen.aruma.wge(n=200, s=12, phi=c(1.5, -.8), sn=87, plot = FALSE)
+x = x + 50
+plotts.sample.wge(x, lag.max = 60)
+
+```
+
+#### Modeling the data
+
+  - Overfit tables suggested a factor of (1 - B^12)
+  - We transformed the data by (1 - B^12)
+
+
+
+$$\begin{equation}
+   (1-B^{12})(1 - 1.47B + .76B^2)(X_t - 49.78) = a_t ; \sigma^2 = 1.04
+\end{equation}$$
+
+
+
+```{r 11.2.6.2}
+
+y = artrans.wge(x, phi.tr = c(rep(0, 11), 1))
+
+aic5.wge(y, type = "bic")
+
+est.y = est.ar.wge(y, p=2)
+
+est.y
+mean(x)
+
+```
+#### Check 1  (Visual Test)
+
+- Residuals look "white"
+
+```{r 11.2.6.3}
+
+plotts.sample.wge(est.y$res)
+
+```
+    
+
+#### Check 2 (Ljung-Box test) 
+
+Fail to Reject the Null Hypothesis (the residuals seem to be white)
+
+```{r 11.2.6.4}
+
+ljung.wge(est.y$res, p=2, K=48)
+
+```
+
+## 11.3 Log Airline Data
+
+```{r 11.3.1.1}
+
+
+data(airlog)
+# transform the data
+# difference the data
+d1 = artrans.wge(airlog, phi.tr=1)  # (1-B)
+s12 = c(rep(0,11), 1)
+d1.12 = artrans.wge(d1, phi.tr = s12)
+aic.wge(d1.12, p=0:15, q=0:3)
+# aic and aicc pick ARMA(12,1)
+# estimate parameters of stationary part
+est.12.1 = est.arma.wge(d1.12, p=12, q=1)
+
+
+
+
+```
+### Check 1
+
+Examine residuals and their sample autocorrelations
+
+ - Residuals look fairly white
+
+
+```{r 11.3.1.2}
+
+plotts.sample.wge(est.12.1$res)
+
+```
+
+
+### Check 2
+
+Ljung-Box Test
+
+We fail to reject the null hypothesis (at an alpha level of .05)
+
+The residuals "pass" both tests for white noise
+
+```{r 11.3.1.3}
+
+ljung.wge(est.12.1$res, p=12, q=1, K=24)
+
+```
+
+
+### 11.3.2 Log Airline Data
+
+#### Do the residuals and ACF look consistent with white noise?
+
+```{r 11.3.2.1}
+
+data(airlog) # load from tswge package
+airlog1 = artrans.wge(airlog,phi.tr=1)
+airlog1.12 = artrans.wge(airlog1,phi.tr = c(rep(0,11),1))
+ww = est.ar.wge(airlog1.12,p = 12)
+
+
+```
+#### Step 3: Perform the Ljung–Box test on the residuals. Use K = 24.
+
+```{r 11.3.2.2}
+
+ljung.wge(ww$res, p=12)
+
+
+```
+
+
+### 11.3.5
+
+
+Answer Questions of Interest
+
+
+
+```{r 11.3.5.1}
+
+
+TwoMonthForecast = fore.aruma.wge(airlog, d = 1, s = 12, phi = est.12.1$phi, theta = est.12.1$theta, n.ahead = 2, limits = TRUE)
+
+```
+Conclusion:  In two months, we are 95% confident that the number of airline passengers will be between 399,415 (e^5.99 * 1000) and 468,717 (e^6.15 * 1000) passengers.  Our best estimate is 432,681 (e^6.07 * 1000) passengers.
+
+```{r 11.3.5.2}
+
+
+lower_limit = exp(TwoMonthForecast$ll[2]) * 1000
+upper_limit = exp(TwoMonthForecast$ul[2]) * 1000
+point_forecast = exp(TwoMonthForecast$f[2]) * 1000
+
+lower_limit
+upper_limit
+point_forecast
+
+
+```
+
+## 11.4 Global Temperature Data, Part I
+
+### 11.4.1 More Checks for Model Appropriateness
+
+Does the model make sense?
+
+1.  Stationary vs. non-stationary
+2.  Seasonal vs. non-seasonal
+3.  Correlations-based vs. signal-plus-noise model
+4.  Are the characteristics of the fitted model consistent with those of the data
+    - Forecasts and spectral estimates make sense?
+    - Do realizations and their characteristics behave like the data
+    
+    
+### 11.4.2 Stationary Model
+
+Global Temperature Data
+
+
+```{r 11.4.2.1}
+
+
+data(hadley)
+mean(hadley) # -0.1684937
+plotts.sample.wge(hadley)
+
+# MOdel Stationary Data
+aic5.wge(hadley, p=0:6, q=0:1) # ARMA(3,1)
+
+had.est = est.arma.wge(hadley, p=3, q=1)
+
+# check for white residuals
+plotts.sample.wge(had.est$res, arlimits=TRUE)
+
+ljung.wge(had.est$res, p=3, q=1)
+ljung.wge(had.est$res, p=3, q=1, K = 48)
+
+# Fail to reject the null hypothesis
+
+```
+
+
+### 11.4.3
+
+True or false? If we fit an ARMA(3,1) model to the data and check the residuals and they
+
+- look white.a
+- the ACF has no bars outside the limit lines.
+- has a Ljung–Box p-value that is .3829
+
+
+(*False*) There may be many models that have residuals that appear to be white and pass the Ljung–Box test. In fact, it will be up to you to decide which of the plausible models you will use in the end.
+
+
+### 11.4.4 Non-Stationary Model
+
+Global Temperature Data
+
+
+
+```{r 11.4.4.1}
+
+# Non-Stationary
+
+# Indications of a unit root of +1  (close to 1-B)
+# Wandering behavior and fairly slowly damping sample auto-correlations
+# overfit tables with p=8 and p=12
+# Dickey Fuller test (fails to reject)
+
+
+d1.temp = artrans.wge(hadley, phi.tr = 1)
+plotts.sample.wge(d1.temp, arlimits = TRUE)
+
+# Model Non-Stationary Data
+aic5.wge(d1.temp, p=0:6, q=0:1) # ARMA(2,1)
+
+d1.temp.est = est.arma.wge(d1.temp, p=2, q=1)
+
+# check for white residuals
+plotts.sample.wge(d1.temp.est$res, arlimits=TRUE)
+
+ljung.wge(d1.temp.est$res, p=2, q=1)
+ljung.wge(d1.temp.est$res, p=2, q=1, K = 48)
+
+# Fail to reject the null hypothesis
+
+```
+
+
+```{r 11.4.4.3}
+
+# Stationary Model
+fore.arma.wge(hadley, phi=c(1.27, -.47, .19), theta = .63, n.ahead = 50, limits = FALSE)
+
+# Non-Stationary Model
+fore.aruma.wge(hadley, d = 1, phi=c(.33, -.18), theta = .7, n.ahead = 50, limits = FALSE)
+
+```
+
+
+## 11.5 Global Temperature Data, Part II
+
+
+### 11.5.1 Signal-Plus-Noise Model
+
+Global Temperature Data
+
+X_t = a + bt + Zt
+
+H0: b = 0 vs HA: b != 0
+
+1.  Fit a regression line to the data and find the residuals from the line
+
+2.  Fit an AR(p) model phi(hat)_z(B) to the residuals and find
+
+  Y(hat)_t = phi(hat)_z(B)X_t
+  
+3.  Transform the independent variable (time)
+  
+  T_t = phi_z (B)T_t, T_1 = 1, T_2 = 2 etc.. T_t = t.trans
+  
+4.  Rgress Y(hat)_t on T(hat)_t using OLS
+
+```{r 11.5.1.1}
+
+x = hadley
+
+n = length(x)
+
+t = 1:n
+
+d = lm(x~t)
+
+x.z = x-d$coefficients[1] - d$coefficients[2] * t
+# x.z are the residuals from the regression line
+
+```
+
+```{r 11.5.1.2}
+
+ar.z = aic.wge(x.z, p=0:6)
+# ar.z$p is the order p (aic selects p = 4 here)
+# ar.z$phi is a vector of ar.z$p (4 estimated AR coefficients)
+y.trans = artrans.wge(hadley, phi.tr = ar.z$phi)
+
+plotts.wge(y.trans)
+
+```
+
+After accounting for the serial correlation AR(4), there is strong evidence to suggest that the slope is significantly different from zero (p-value < .0001)
+
+```{r 11.5.1.3}
+
+# ar.z$phi is a vector of ar.z$p (4) estimated AR coefficients
+t.trans = artrans.wge(t, phi.tr = ar.z$phi)
+
+fit = lm(y.trans~t.trans)
+summary(fit)
+
+
+```
+
+```{r 11.5.1.4}
+
+plotts.sample.wge(fit$residual, arlimits = TRUE)
+
+ljung.wge(fit$residuals)
+
+```
+
+```{r 11.5.1.5}
+
+gen.sigplusnoise.wge(160, b0 = -.5257, b1 = .0044, phi = ar.z$phi, vara = .0103)
+
+```
+
+```{r 11.5.1.6}
+
+fore.sigplusnoise.wge(hadley, max.p = 4, n.ahead = 50, limits = FALSE)
+
+```
+
+### Final Thoughts on Tempurature Data
+
+Important Points
+
+
+- Realizations from AR (ARMA/ ARUMA) models have random trends
+- Realizations from the Signal Plus Noise data have deterministic trends
+- All three are satisfactory in
+  1. Residual Analysis
+  2. Realizations generated
+  
+  However, produced strikingly different forecasts
+  
+  
+  ## 11.6 Sunspot Data, Part I
+  
+  ### 11.6.1 More on Model Appropriateness
+  
+  ### 11.6.2 Box-Jenkins Model
+  
+```{r 11.6.2.1}
+
+# Load the data
+data("sunspot.classic")
+
+
+# Plot sunspot classic
+plotts.wge(sunspot.classic)
+
+# ACF and PACF for sunspot.classic data
+acf(sunspot.classic)
+pacf(sunspot.classic)
+
+# Estimate AR(2) parameters
+s2 = est.ar.wge(sunspot.classic, p=2)
+
+plotts.sample.wge(s2$res, arlimits = TRUE)
+
+
+s2$phi # 1.3347282 -0.6474423
+s2$avar # 235.993
+
+mean(sunspot.classic)
+
+
+ljung.wge(s2$res)
+ljung.wge(s2$res, K = 48)
+
+```
+  
+  
+```{r 11.6.3.1}
+
+# Load the data
+data("sunspot.classic")
+
+
+aic5.wge(sunspot.classic, p=0:10, q=0:0)
+
+# AIC picks an AR(8)
+# FYI BIC selects an AR(2)
+
+s8 = est.ar.wge(sunspot.classic, p=8)
+
+s8$phi # 1.22872595 -0.47331327 -0.13807811  0.15688938 -0.14030802  0.07050449 -0.12841889  0.20692558
+s8$avar # 212.6003
+mean(sunspot.classic) # 44.78409
+
+
+plotts.sample.wge(s8$res, arlimits = TRUE)
+
+ljung.wge(s8$res)
+ljung.wge(s8$res, K = 48)
+
+
+```
+  
+  
+  
+## 11.7 Sunspot Data, Part II
+
+### 11.7.1 Comparing Realizations
+
+### 11.7.2 Comparing Autocorrelations
+
+Generating data from your model to compare against the actual one can be helpful when comparing it to other model types.  The one that looks more consistent with the actual one might be the better choice.
+
+### 11.7.3 Comparing Spectral Densities
+
+
+### 11.7.4 Comparing Forecasts
+
+
+
+
+
+
+
