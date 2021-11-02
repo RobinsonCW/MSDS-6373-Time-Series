@@ -149,7 +149,7 @@ The ASE for the AR(13) model with s=11 was *2502*.
 
 ```{r activity-1.7}
 
-sunspot.s11.ar13.forecast = fore.aruma.wge(sunspot$V2, s = 11, phi = sunspot.s11.seasonal$phi, n.ahead = 15, lastn = TRUE, limits = FALSE)
+sunspot.s11.ar13.forecast = fore.aruma.wge(sunspot$V2, s = 11, d=1, phi = sunspot.s11.seasonal$phi, n.ahead = 15, lastn = TRUE, limits = FALSE)
 
 
 sunspot.s11.ar13.ase = mean((sunspot$V2[(321 - 15 + 1): 321] - sunspot.s11.ar13.forecast$f)^2)
@@ -163,7 +163,7 @@ Use your best model (the one you choose) to forecast the next 10 years of sunspo
 
 ```{r activity-1.8}
 
-sunspot.s11.ar13.forecast = fore.aruma.wge(sunspot$V2, s = 11, phi = sunspot.s11.seasonal$phi, n.ahead = 10, lastn = FALSE, limits = FALSE)
+sunspot.s11.ar13.forecast = fore.aruma.wge(sunspot$V2, s = 11, d=1, phi = sunspot.s11.seasonal$phi, n.ahead = 10, lastn = FALSE, limits = FALSE)
 
 
 ```
