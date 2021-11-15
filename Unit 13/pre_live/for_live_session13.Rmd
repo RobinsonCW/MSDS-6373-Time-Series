@@ -1,0 +1,87 @@
+---
+title: "Unit 13 | Neural Networks"
+output: html_notebook
+---
+
+```{r library-imports}
+
+# Neural Networks
+library(nnfor)
+
+library(tidyverse)
+library(tswge)
+library(kableExtra)
+# library(tseries)
+# library(orcutt)
+
+```
+
+
+# For Live Session
+
+## Activity 1
+
+## Activity 2
+
+
+# Asynchronous Material
+
+## 13.1 Introduction
+
+## 13.2 Overview of Neural Networks
+
+### 13.2.1 Neural Networks and Time Series
+
+The Perceptron
+- Input Layer
+  - x1, x2 ... xp
+  - w1, w2 ... wp
+- theta (bias term)
+- Output Layer
+
+
+activation function
+- Sigmoid
+- tanh
+- ReLu
+- Leaky ReLu
+- Maxout
+- ELU
+
+The Multilayered Perceptrol (MLP)
+
+Hidden Layers (can have one or more)
+
+
+A Familiar Neural Network:  Simple Linear Regression
+
+y = B_0 + B_1x_1 + e
+
+Input Layer x_1 > (1) > B_1 + theta(B_0) > Output Layer
+
+**It can be shown that a neural network with one hidden layer can approximate any continuous function.**
+
+### 13.2.3
+
+True or false? The input nodes have activation functions. 
+**True**
+
+### 13.2.4
+
+True or false? Adding one or more “hidden layers” allows for estimation of nonlinear relationships between the inputs and the outputs.
+**True**
+
+### 13.2.5
+
+True or false? A single hidden layer can approximate any continuous function (model).
+**True**
+
+### 13.2.6
+
+True or false? Gradient descent is the only option for estimating the weights and biases.
+**False**
+
+
+
+
+
