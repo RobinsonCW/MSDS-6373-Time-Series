@@ -83,5 +83,275 @@ True or false? Gradient descent is the only option for estimating the weights an
 
 
 
+## 13.3 MLP and R Package NNFOR
+
+### 13.3.1
+
+ts {stats}	R Documentation
+Time-Series Objects
+
+Arguments
+**data**	
+a vector or matrix of the observed time-series values. A data frame will be coerced to a numeric matrix via data.matrix. (See also ‘Details’.)
+
+**start**	
+the time of the first observation. Either a single number or a vector of two numbers (the second of which is an integer), which specify a natural time unit and a (1-based) number of samples into the time unit. See the examples for the use of the second form.
+
+**end**	
+the time of the last observation, specified in the same way as start.
+
+**frequency**
+the number of observations per unit of time.
+
+### 13.3.2  Example:  SWA Delays
+
+```{r 13.3.2.1}
+
+swa <- read_csv("../../Unit 5/SWADelay.csv",  show_col_types = FALSE)
+
+
+swa.train <- ts(swa$arr_delay[1:141], start = c(2004,1), frequency = 12)
+
+swa.test <- ts(swa$arr_delay[142:177], start = c(2015,10), frequency = 12)
+
+set.seed(2)
+
+fit.swa.mlp = mlp(swa.train, reps = 50, comb = "mean")
+fit.swa.mlp
+
+
+# MLP fit with 5 hidden nodes and 50 repetitions.
+# Series modelled in differences: D1.
+# Univariate lags: (1,2,3,4,5)
+# Deterministic seasonal dummies included.
+# Forecast combined using the mean operator.
+# MSE: 5,043,757.8409.
+
+```
+
+
+Visualize the Neural Network
+
+```{r 13.3.2.2}
+
+plot(fit.swa.mlp)
+
+```
+
+Forecast 
+
+```{r 13.3.2.3}
+
+fore.swa.mlp = forecast(fit.swa.mlp, h = 36)
+plot(fore.swa.mlp)
+
+```
+
+ASE
+
+```{r 13.3.2.4}
+
+ase.swa.forecasts = mean((swa.test - fore.swa.mlp$mean)^2)
+ase.swa.forecasts
+
+# 317,604,252
+
+```
+
+Specify the lags
+
+```{r 13.3.2.5}
+
+
+
+fit.swa.mlp = mlp(swa.train, reps = 20, lags = c(1,2,3,4,5,6,7,8,9,10,11,12), allow.det.season = FALSE)  # median is the default
+
+set.seed(2)
+fit.swa.mlp
+
+# MLP fit with 5 hidden nodes and 20 repetitions.
+# Series modelled in differences: D1.
+# Univariate lags: (1,2,3,4,5,6,7,8,9,11,12)
+# Forecast combined using the median operator.
+# MSE: 5,598,324.2681
+
+
+```
+
+
+```{r 13.3.2.6}
+
+plot(fit.swa.mlp)
+
+```
+
+```{r 13.3.2.7}
+
+fore.swa.mlp = forecast(fit.swa.mlp, h = 36)
+plot(fore.swa.mlp)
+
+```
+
+```{r 13.3.2.8}
+
+ase.swa.forecasts = mean((swa.test - fore.swa.mlp$mean)^2)
+ase.swa.forecasts
+
+# 456,929,879
+
+```
+
+
+```{r 13.3.2.9}
+
+fit.swa.mlp = mlp(swa.train, reps = 20, difforder =  c(12), allow.det.season = FALSE)  # median is the default
+
+set.seed(2)
+fit.swa.mlp
+
+# MLP fit with 5 hidden nodes and 20 repetitions.
+# Series modelled in differences: D12.
+# Univariate lags: (1,2,3,6,9,12)
+# Forecast combined using the median operator.
+# MSE: 32,068,872
+
+```
+
+```{r 13.3.2.10}
+
+plot(fit.swa.mlp)
+
+```
+
+```{r 13.3.2.11}
+
+fore.swa.mlp = forecast(fit.swa.mlp, h = 36)
+plot(fore.swa.mlp)
+
+```
+
+```{r 13.3.2.12}
+
+ase.swa.forecasts = mean((swa.test - fore.swa.mlp$mean)^2)
+ase.swa.forecasts
+
+# 221,327,082
+
+```
+
+### 13.3.3 Concept Check
+
+Which R call below fits 100 neural networks that includes a (1-B), (1-B6), and (1-B12) seasonal factor and also allows for AR fitting of the residuals after the differencing?
+
+**fit.mlp = mlp(SWATrain, difforder = c(1,6,12), allow.det.season = FALSE, reps = 100)**
+
+### 13.3.4 Concept Check
+
+Given that the R code below will fit 100 neural networks that include a (1-B), (1-B6), and (1-B12) seasonal factor and also allows for AR fitting of the residuals after the differencing, use this code to obtain forecasts of the number of delays in the last 36 months (from October 2015, to September 2018).
+
+**fit.mlp = mlp(SWATrain, difforder = c(1,6,12), allow.det.season = FALSE, reps = 100)**
+
+```{r 13.3.4}
+
+set.seed(42)
+
+fit.swa.mlp = mlp(swa.train, difforder = c(1,6,12), allow.det.season = FALSE, reps = 100)
+
+
+fore.swa.mlp = forecast(fit.swa.mlp, h = 36)
+
+ase.swa.forecasts = mean((swa.test - fore.swa.mlp$mean)^2)
+ase.swa.forecasts
+
+# 845,232,182
+
+```
+
+## 13.4 Example Airline Data
+
+### 13.4.1 
+
+```{r 13.4.1}
+
+
+data(airlog)
+
+
+airlog.train <- ts(airlog[1:108], start = c(1949,1), frequency = 12)
+
+airlog.test <- ts(airlog[109:144], start = c(1958,1), frequency = 12)
+
+set.seed(2)
+
+fit.airlog.mlp = mlp(airlog.train)
+fit.airlog.mlp
+
+```
+
+
+
+```{r 13.4.2}
+
+fore.airlog.mlp = forecast(fit.airlog.mlp, h = 36)
+plot(fore.airlog.mlp)
+
+```
+
+```{r 13.4.3}
+
+ase.airlog.forecasts = mean((airlog.test - fore.airlog.mlp$mean)^2)
+ase.airlog.forecasts
+
+```
+
+```{r 13.4.4}
+
+set.seed(2)
+
+fit.airlog.mlp = mlp(airlog.train, difforder = c(12))
+fit.airlog.mlp
+
+fore.airlog.mlp = forecast(fit.airlog.mlp, h = 36)
+plot(fore.airlog.mlp)
+
+ase.airlog.forecasts = mean((airlog.test - fore.airlog.mlp$mean)^2)
+ase.airlog.forecasts
+
+```
+
+```{r 13.4.5}
+
+set.seed(2)
+
+fit.airlog.mlp = mlp(airlog.train, hd.auto.type = "cv")
+fit.airlog.mlp
+
+fore.airlog.mlp = forecast(fit.airlog.mlp, h = 36)
+plot(fore.airlog.mlp)
+
+ase.airlog.forecasts = mean((airlog.test - fore.airlog.mlp$mean)^2)
+ase.airlog.forecasts
+
+```
+
+
+
+## 13.5 Multivariate Neural Networks
+
+### 13.5.1 Example
+
+```{r 13.5.1}
+
+
+
+```
+
+
+
+
+
+
+
+
 
 
