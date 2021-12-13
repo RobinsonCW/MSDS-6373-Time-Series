@@ -1,0 +1,548 @@
+---
+title: "Time Series Analysis for IT Hardware Inventory Forecasts"
+author: "Chance Robinson"
+date: 10/26/2021
+lang: en-US
+class: man
+# figsintext: true
+numbersections: true
+encoding: UTF-8
+bibliography: references.bib
+biblio-style: apalike
+output:
+  bookdown::pdf_document2:
+     citation_package: natbib
+     keep_tex: true
+     toc: true
+header-includes:
+   - \usepackage{amsmath}
+   - \usepackage[utf8]{inputenc}
+   - \usepackage[T1]{fontenc}
+   - \usepackage{setspace}
+   - \usepackage{hyperref}
+   - \onehalfspacing
+   - \newcommand\numberthis{\addtocounter{equation}{1}\tag{\theequation}}
+editor_options:
+  chunk_output_type: console
+---
+
+\newpage
+
+
+```{r library-imports, results='hide', message=FALSE, include=FALSE, echo=FALSE}
+
+# Time Series Analysis
+library(tseries)
+library(forecast)
+library(TSstudio)
+library(tswge)
+library(orcutt)
+
+# Date Manipulation
+library(lubridate)
+
+# Metrics
+library(MLmetrics)
+
+# Misc
+library(tidyverse)
+library(kableExtra)
+library(knitr)
+
+
+```
+
+
+```{r load-data, results='hide', message=FALSE, include=FALSE, echo=FALSE}
+
+setwd('.')
+
+# df_data <- read.csv(file="./Project/it_purchases/data/sc_req_item.csv", header = TRUE)
+df_data <- read.csv(file="../data/sc_req_item.csv", header = TRUE)
+
+# df_optiplex$opened_at = as.POSIXct(strptime(df_optiplex$opened_at, "%Y-%m-%d %H:%M:%SS"))
+
+df_data$opened = floor_date(mdy_hm(df_data$opened_at), "day")
+
+df_data <- df_data %>%
+  mutate(year = as.factor(format(opened, format = "%Y")),
+         month = as.factor(format(opened, format = "%m")))
+
+df_optiplex <- df_data %>%
+    filter(cat_item == "Dell Optiplex 7000 Series")
+    # filter(cat_item == "Dell Latitude 14 5000 Series")
+
+
+
+```
+
+
+# Dell Optiplex
+
+## Original Data
+
+Includes only requests created after July, 28th 2018 and before October 21st, 2021 that are in a state of Work in Progress, Pending Verification or Closed Complete.  This is due to the fact that a high percentage of orders are cancelled before being fully approved in PeopleSoft, which should not necessarily be included for inventory estimation purposes.
+
+### Daily
+
+The average amount of products requested for the period was __`r round(mean(df_optiplex$quantity), digits=2)`__.  
+
+
+```{r optiplex-line-chart-by-day-original, message=FALSE, echo=FALSE}
+
+ggplot(data=df_optiplex, aes(x = opened, y = quantity)) +
+      geom_line() + 
+      ggtitle("Daily Optiplex Purchases") +
+      labs(x = "Daily", y = "Quantity Purchased")
+
+```
+
+\newpage
+
+```{r optiplex-bar-chart-by-quantity-original, results='hide', message=FALSE, include=FALSE, echo=FALSE}
+
+df_optiplex %>%
+  remove_missing(na.rm = TRUE) %>%
+  group_by(quantity) %>%
+  # filter(n() < 10) %>%
+  ggplot(aes(x = quantity, fill=..count..)) + 
+  geom_bar() +
+  geom_text(stat='count', aes(label=..count..), vjust=-1) +
+  ggtitle("Optiplex Purchases by Quantity") +
+  labs(x = "Quantity", y = "Count") +
+  theme(plot.title = element_text(hjust = 0.5)) + lims(y=c(0,2000)) 
+
+```
+
+#### Histogram of Counts by Quantity
+
+- There are a few purchases where a single order had more than 5 items (i.e..the quantity)  
+- We will assume that these would normally go through the normal PeopleSoft purhcasing lifecycle.
+
+
+
+```{r optiplex-histogram-by-quantity-original, message=FALSE, echo=FALSE}
+df_optiplex %>%
+  ggplot(aes(quantity)) +
+  geom_histogram(bins = 25) +
+  ggtitle("Histogram of Optiplex Purchases by Quantity") +
+  labs(x = "Quantity", y = "Count") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+```
+
+\newpage
+
+### Weekly
+
+
+```{r optiplex-counts-by-week-original, results='hide', message=FALSE, include=FALSE, echo=FALSE}
+
+df_optiplex_by_week_orig <- df_optiplex %>% 
+    group_by(week = lubridate::floor_date(opened, "week")) %>%
+    summarize(summary_variable = sum(quantity))
+
+```
+
+The average amount of products requested for the period was __`r round(mean(df_optiplex_by_week_orig$summary_variable), digits=2)`__. 
+
+```{r optiplex-line-chart-by-week-original, message=FALSE, echo=FALSE}
+
+ggplot(data=df_optiplex_by_week_orig, aes(x = week, y = summary_variable)) +
+      geom_hline(yintercept = mean(df_optiplex_by_week_orig$summary_variable), color="blue") + 
+      geom_line() +
+      ggtitle("Weekly Optiplex Purchases") +
+      labs(x = "Week", y = "Quantity Purchased") 
+
+```
+
+\newpage
+
+### Monthly
+
+```{r optiplex-counts-by-month-original, results='hide', message=FALSE, include=FALSE, echo=FALSE}
+
+df_optiplex_by_month_orig <- df_optiplex %>% 
+    group_by(month = lubridate::floor_date(opened, "month")) %>%
+    summarize(summary_variable = sum(quantity))
+
+```
+
+The average amount of products requested for the period was __`r round(mean(df_optiplex_by_month_orig$summary_variable), digits=2)`__. 
+
+```{r optiplex-line-chart-by-month-original, message=FALSE, echo=FALSE}
+
+ggplot(data=df_optiplex_by_month_orig, aes(x = month, y = summary_variable)) +
+      geom_hline(yintercept = mean(df_optiplex_by_month_orig$summary_variable),color="blue") + 
+      geom_line() +
+      ggtitle("Monthly Optiplex Purchases") +
+      labs(x = "Month", y = "Quantity Purchased")
+
+```
+
+
+\newpage
+
+
+### Quarterly
+
+```{r optiplex-counts-by-quarter-original, results='hide', message=FALSE, include=FALSE, echo=FALSE}
+
+# https://stackoverflow.com/questions/33221425/how-do-i-group-my-date-variable-into-month-year-in-r/33221885
+
+df_optiplex_by_quarter_orig <- df_optiplex %>% 
+    group_by(quarter = lubridate::floor_date(opened, "quarter")) %>%
+    summarize(summary_variable = sum(quantity))
+
+```
+
+The average amount of products requested for the period was __`r round(mean(df_optiplex_by_quarter_orig$summary_variable), digits=2)`__. 
+
+
+```{r optiplex-line-chart-by-quarter-original, message=FALSE, echo=FALSE}
+
+ggplot(data=df_optiplex_by_quarter_orig, aes(x = quarter, y = summary_variable)) +
+      geom_hline(yintercept = mean(df_optiplex_by_quarter_orig$summary_variable), color="blue") + 
+      geom_line() +
+      ggtitle("Quarterly Optiplex Purchases") +
+      labs(x = "Quarter", y = "Quantity Purchased") 
+
+```
+
+\newpage
+
+### Quarterly Pivot Table
+
+Note that the first and last quarters are incomplete and do not represent full quarters.
+
+```{r optiplex-pivot-table-by-quarter-original, results='asis', message=FALSE, echo=FALSE}
+
+df_optiplex_by_quarter_orig %>% 
+  # kable(format = "html", booktabs = T)
+  kable(format = "latex")
+  # kable_styling(bootstrap_options = c("striped", "condensed", "center"))
+
+```
+
+
+\newpage
+
+## Filtered Data
+
+- Excluding requested items that had a quantity of less than five.
+- Only looking a records created at or after July 5th, 2021 and before June 27, 2021 as the recent trend behaviour seems to behave differently to that of prior years.
+- Also, there is a higher percentage of items yet to be processed in PeopleSoft which would skew our numbers if the more recent purhcases were to be included.
+
+
+```{r optiplex-filter-records, results='hide', message=FALSE, include=FALSE, echo=FALSE}
+
+df_optiplex <- df_optiplex %>%
+  filter(quantity < 5) %>%
+  filter(opened >= "2020-07-05")  %>%
+  filter(opened < "2021-06-27")
+  # filter(opened < "2021-07-01")
+  
+```
+
+### Weekly
+
+```{r optiplex-counts-by-week, results='hide', message=FALSE, include=FALSE, echo=FALSE}
+
+df_optiplex_by_week <- df_optiplex %>% 
+    group_by(week = lubridate::floor_date(opened, "week")) %>%
+    summarize(summary_variable = sum(quantity))
+
+```
+
+The average amount of products requested for the period was __`r round(mean(df_optiplex_by_week$summary_variable), digits=2)`__. 
+
+```{r optiplex-line-chart-by-week, message=FALSE, echo=FALSE}
+
+ggplot(data=df_optiplex_by_week, aes(x = week, y = summary_variable)) +
+      geom_hline(yintercept = mean(df_optiplex_by_week$summary_variable), color="blue") + 
+      geom_line() +
+      ggtitle("Weekly Optiplex Purchases") +
+      labs(x = "Week", y = "Quantity Purchased") 
+
+```
+
+\newpage 
+
+### Monthly
+
+```{r optiplex-counts-by-month, results='hide', message=FALSE, include=FALSE, echo=FALSE}
+
+df_optiplex_by_month <- df_optiplex %>% 
+    group_by(month = lubridate::floor_date(opened, "month")) %>%
+    summarize(summary_variable = sum(quantity))
+
+```
+
+The average amount of products requested for the period was __`r round(mean(df_optiplex_by_month$summary_variable), digits=2)`__. 
+
+```{r optiplex-line-chart-by-month, message=FALSE, echo=FALSE}
+
+ggplot(data=df_optiplex_by_month, aes(x = month, y = summary_variable)) +
+      geom_hline(yintercept = mean(df_optiplex_by_month$summary_variable),color="blue") + 
+      geom_line() +
+      ggtitle("Monthly Optiplex Purchases") +
+      labs(x = "Month", y = "Quantity Purchased")
+
+```
+
+\newpage 
+
+### Quarterly
+
+```{r optiplex-counts-by-quarter, results='hide', message=FALSE, include=FALSE, echo=FALSE}
+
+df_optiplex_by_quarter <- df_optiplex %>% 
+    group_by(quarter = lubridate::floor_date(opened, "quarter")) %>%
+    summarize(summary_variable = sum(quantity))
+
+```
+
+The average amount of products requested for the period was __`r round(mean(df_optiplex_by_quarter$summary_variable), digits=2)`__. 
+
+```{r optiplex-line-chart-by-quarter, message=FALSE, echo=FALSE}
+
+ggplot(data=df_optiplex_by_quarter, aes(x = quarter, y = summary_variable)) +
+      geom_hline(yintercept = mean(df_optiplex_by_quarter$summary_variable), color="blue") + 
+      geom_line() +
+      ggtitle("Quarterly Optiplex Purchases") +
+      labs(x = "Quarter", y = "Quantity Purchased") 
+
+```
+
+\newpage 
+
+#### Bar Chart by Quantity Purchased
+
+- Note that all purchases with quantities exceeding 4 have been filtered.
+
+```{r optiplex-bar-chart, message=FALSE, echo=FALSE}
+
+df_optiplex %>%
+  remove_missing(na.rm = TRUE) %>%
+  group_by(quantity) %>%
+  # filter(n() < 10) %>%
+  ggplot(aes(x = quantity, fill=..count..)) + 
+  geom_bar() +
+  geom_text(stat='count', aes(label=..count..), vjust=-1) +
+  ggtitle("Optiplex Purchases by Quantity") +
+  labs(x = "Quantity", y = "Count") +
+  theme(plot.title = element_text(hjust = 0.5)) + lims(y=c(0,550)) 
+
+
+```
+
+
+
+```{r optiplex-factor, results='hide', message=FALSE, include=FALSE, echo=FALSE}
+
+factor.wge(phi = c(rep(0,11), 1))
+
+```
+
+
+```{r optiplex-estimate, results='hide', message=FALSE, include=FALSE, echo=FALSE}
+
+est.ar.wge(df_optiplex_by_week$summary_variable, p = 15, type = "burg")
+
+```
+
+
+```{r optiplex-plotts-sample, results='hide', message=FALSE, include=FALSE, echo=FALSE}
+
+plotts.sample.wge(df_optiplex_by_week$summary_variable)
+
+```
+
+```{r optiplex-log, results='hide', message=FALSE, include=FALSE, echo=FALSE}
+
+# df_optiplex_by_week$summary_variable <- log(df_optiplex_by_week$summary_variable)
+
+```
+
+
+```{r optiplex-difference, results='hide', message=FALSE, include=FALSE, echo=FALSE}
+
+d1 = artrans.wge(df_optiplex_by_week$summary_variable, phi.tr = 1)
+
+d2 = artrans.wge(d1, phi.tr = 1)
+
+```
+
+
+
+```{r optiplex-aic-5, results='hide', message=FALSE, include=FALSE, echo=FALSE}
+
+aic5.wge(df_optiplex_by_week$summary_variable,  p = 0:15, q = 0:2, type = "aic")
+
+
+```
+
+
+
+
+```{r optiplex-tswge-estimate, results='hide', message=FALSE, include=FALSE, echo=FALSE}
+
+e.optiplex = est.arma.wge(df_optiplex_by_week$summary_variable, p=13, q=1)
+mean(df_optiplex_by_week$summary_variable)
+
+# e = e + mean(df_optiplex_by_week$summary_variable)
+
+```
+
+```{r optiplex-parzen, results='hide', message=FALSE, include=FALSE, echo=FALSE}
+
+plotts.parzen.wge(df_optiplex_by_week$summary_variable)
+
+```
+
+\newpage 
+
+## Model Performance
+
+The chart below represents predictions made on observations that we already had actual counts for.  This will allow us to guage performance for future predictions.
+
+### Predictions Plot
+
+```{r optiplex-tswge-forecast,  message=FALSE, echo=FALSE}
+
+f.optiplex = fore.aruma.wge(df_optiplex_by_week$summary_variable, phi = e.optiplex$phi, theta = e.optiplex$theta, n.ahead = 12, limits = FALSE, lastn=TRUE) 
+
+
+```
+
+### Predictions ASE
+
+Average Squared Error
+
+```{r optiplex-ase, results='hide', message=FALSE, include=FALSE, echo=FALSE}
+
+seasonal_ase_optiplex = mean((df_optiplex_by_week$summary_variable[(51 - 12 + 1): 51] - f.optiplex$f)^2)
+seasonal_ase_optiplex
+
+
+```
+
+
+We were able to achieve an ASE of __`r round(seasonal_ase_optiplex, digits=2)`__.  In this case, we overestimated the quarterly counts by about __`r round(seasonal_ase_optiplex)`__ items.
+
+```{r optiplex-output, results='hide', message=FALSE, include=FALSE, echo=FALSE}
+
+df_optiplex_out <- df_optiplex_by_week %>%
+   select(week, summary_variable) %>%
+   filter(week >= "2021-03-28")
+
+
+df_optiplex_out$predictions = round(f.optiplex$f)
+
+df_optiplex_out <- plyr::rename(df_optiplex_out, replace = c("summary_variable"="actual"))
+
+df_optiplex_out <- df_optiplex_out %>%
+  mutate(diff = (actual - predictions)) %>%
+  mutate(abs.diff = abs(actual - predictions))
+
+
+```
+
+\newpage
+
+## Forecast
+
+### Actual Counts vs. Predicted
+
+This table shows a comparison of the model's predictions vs. those of the known weekly counts from the prior 12 periods.
+
+
+
+```{r optiplex-print-output, results='asis', message=FALSE, echo=FALSE}
+
+
+df_optiplex_out %>% 
+  # kable(format = "html", booktabs = T) %>% 
+  kable(format = "latex", booktabs = T)
+  
+
+```
+
+
+\newpage 
+
+```{r optiplex-arima-model-1, results='hide', message=FALSE, include=FALSE, echo=FALSE}
+
+arima.optiplex <- arima(df_optiplex_by_week$summary_variable, order=c(13, 0, 1))
+
+```
+
+### Future Predictions Plot
+
+
+```{r optiplex-arima-model-2, results='hide', message=FALSE, include=FALSE, echo=FALSE}
+
+forecast.optiplex <- forecast(arima.optiplex, h=12)
+
+```
+
+
+```{r optiplex-arima-model-3, message=FALSE, echo=FALSE}
+
+plot(forecast.optiplex)
+legend(x = "topleft", legend = c("Predicted"), col = c("blue"), lty = c(1, 1))
+
+```
+
+\newpage 
+
+### Future Prediction Estimates Table
+
+```{r optiplex-arima-model-4, results='asis', message=FALSE, echo=FALSE}
+
+forecast.optiplex %>% 
+  # kable(format = "html", booktabs = T) 
+  kable(format = "latex", booktabs = T)
+  
+
+
+```
+
+
+```{r optiplex-signal-plus-noise, results='hide', message=FALSE, include=FALSE, echo=FALSE}
+
+# x = gen.sigplusnoise.wge(100, b0 = 0, b1 = 0, phi = .95, sn = 21, plot = FALSE)
+
+# t = seq(1,51,1)
+# 
+# df = data.frame(x = df_optiplex_by_week$summary_variable, t=t)
+# 
+# fit = lm(df_optiplex_by_week$summary_variable~df_optiplex_by_week$week, data = df_optiplex_by_week)
+#  
+# summary(fit) # record whether it rejected or failed to reject. 
+
+```
+
+```{r optiplex-cochrane.orcut, results='hide', message=FALSE, include=FALSE, echo=FALSE}
+
+# cfit = cochrane.orcutt(fit)
+# summary(cfit)
+
+```
+
+
+```{r optiplex-scatter-plot, results='hide', message=FALSE, include=FALSE, echo=FALSE}
+
+# df_optiplex_by_week %>%
+#   # select(beer.abv, beer.ibu) %>%
+#   remove_missing(na.rm = TRUE) %>%
+#   ggplot(aes(x = week, y = summary_variable)) + 
+#   ggtitle("Scatterplot of Quantity by Time") +
+#   geom_point(alpha = 0.3) + 
+#   labs(x = "Time", y = "Count") +
+#   # scale_x_continuous(breaks = seq(from = 0, to = 45, by = 2)) + 
+#   geom_smooth(method = 'lm')
+
+```
+
+
